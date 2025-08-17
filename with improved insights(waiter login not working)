@@ -1,0 +1,3056 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarSoko - Ai Powered POS </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* Base Styles & Variables */
+        :root {
+            --brand-blue: #3b82f6;
+            --brand-blue-dark: #2563eb;
+            --gray-900: #111827;
+            --gray-800: #1f2937;
+            --gray-700: #374151;
+            --gray-600: #4b5563;
+            --gray-400: #9ca3af;
+            --gray-200: #e5e7eb;
+            --text-light: #f9fafb;
+            --text-dark: #1f2937;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            scroll-behavior: smooth; 
+            background-color: var(--gray-900);
+        }
+
+        /* Accessibility: Universal Focus Ring */
+        *:focus-visible {
+            outline: 3px solid var(--brand-blue);
+            outline-offset: 2px;
+            border-radius: 0.375rem; /* 6px */
+        }
+
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
+        .modal-content { background-color: var(--gray-800); padding: 2rem; border-radius: 0.75rem; width: 90%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.1); border: 1px solid var(--gray-700); }
+        .hidden { display: none; }
+        
+        /* Login Screen Polish */
+        .login-card {
+            background-color: rgba(31, 41, 55, 0.8); /* bg-gray-800 with opacity */
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--gray-700);
+            transition: all 0.3s ease-in-out;
+        }
+        .login-tab {
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            border-bottom: 3px solid transparent;
+            color: var(--gray-400);
+            transition: all 0.2s ease-in-out;
+        }
+        .login-tab:hover { color: var(--text-light); }
+        .login-tab.active { color: var(--brand-blue); border-bottom-color: var(--brand-blue); font-weight: 600; }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+
+        /* General App Polish */
+        .tab-btn { padding: 0.5rem 1rem; border: none; background: none; cursor: pointer; font-weight: 500; color: var(--gray-400); border-bottom: 2px solid transparent; transition: all 0.2s ease-in-out; }
+        .tab-btn:hover { color: var(--text-light); }
+        .tab-btn.active { border-bottom-color: var(--brand-blue); color: var(--brand-blue); font-weight: 600; }
+        .category-btn.active { background-color: var(--brand-blue); color: white; font-weight: 600; border-color: var(--brand-blue-dark); }
+        
+        .product-card:active {
+            transform: scale(0.97);
+            border-color: var(--brand-blue);
+        }
+        .product-card.low-stock { border-color: #f59e0b; } /* amber-500 */
+        .product-card.out-of-stock { border-color: #ef4444; } /* red-500 */
+
+
+        /* Report Section UI/UX Fixes */
+        .report-btn { transition: all 0.2s ease-in-out; }
+        .report-btn:active { transform: translateY(1px); filter: brightness(90%); }
+        .report-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        
+        #report-output-container {
+            transition: all 0.3s ease-in-out;
+        }
+        #report-output .grid {
+             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+        #report-output table tbody tr:nth-child(even) {
+            background-color: rgba(55, 65, 81, 0.5); /* bg-gray-700 with opacity */
+        }
+        #report-output .stat-card {
+            background-color: var(--gray-900);
+            border: 1px solid var(--gray-700);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .ai-bar { background: linear-gradient(135deg, #1e3a8a, #3b82f6); }
+
+        /* Subscription Restricted Mode */
+        .restricted .restricted-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            z-index: 10;
+            border-radius: 0.5rem;
+        }
+        .restricted .restricted-content {
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        .restricted-overlay-content {
+            padding: 1rem;
+        }
+        .restricted-overlay-content .renew-button {
+            background-color: var(--brand-blue);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            display: inline-block;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+            .modal-backdrop, #app, #login-screen, #report-print-controls { display: none !important; visibility: hidden !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 text-base">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="min-h-screen flex flex-col md:flex-row items-center justify-center p-4 bg-gray-900 bg-cover bg-center" style="background-image: linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.95)), url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=2574&auto=format&fit=crop');">
+        <div class="w-full max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+            <div class="text-center md:text-left">
+                <h1 class="text-5xl md:text-6xl font-extrabold text-white">
+                    <i class="fas fa-wine-glass-alt text-blue-500"></i> Tabster*
+                </h1>
+                <p class="mt-4 text-xl md:text-2xl text-gray-300">The Smart Point of Sale for Modern Joints.</p>
+                <div id="firestore-status" class="mt-4 text-center md:text-left text-sm font-semibold py-2 px-4 rounded-lg inline-block">Connecting...</div>
+            </div>
+            <div class="login-card w-full max-w-md p-8 rounded-xl shadow-2xl">
+                <div class="flex border-b border-gray-700 mb-6">
+                    <div id="admin-login-tab" class="login-tab active flex-1 text-center">Admin Login</div>
+                    <div id="signup-tab" class="login-tab flex-1 text-center">Sign Up</div>
+                    <div id="waiter-login-tab" class="login-tab flex-1 text-center">Waiter</div>
+                </div>
+                <div id="admin-login-form-section" class="form-section active">
+                    <form id="admin-login-form" class="space-y-6">
+                        <h2 class="text-2xl font-bold text-center text-white">Admin Sign In</h2>
+                        <div>
+                            <label for="admin-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                            <input type="email" id="admin-email" autocomplete="email" required class="mt-1 block w-full border border-gray-600 bg-gray-700 rounded-md shadow-sm p-3 text-lg text-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="admin-password" class="block text-sm font-medium text-gray-300">Password</label>
+                            <input type="password" id="admin-password" autocomplete="current-password" required class="mt-1 block w-full border border-gray-600 bg-gray-700 rounded-md shadow-sm p-3 text-lg text-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+						
+                        <p id="admin-login-error" class="text-red-400 text-sm hidden" aria-live="assertive"></p>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition">Sign In</button>
+                        <div class="text-sm text-center">
+                            <a href="#" id="forgot-password-link" class="font-medium text-blue-400 hover:text-blue-300">Forgot password?</a>
+                        </div>
+                    </form>
+                </div>
+                <div id="signup-form-section" class="form-section">
+                    <form id="signup-form" class="space-y-4">
+                        <h2 class="text-2xl font-bold text-center text-white">Create Your Business Account</h2>
+                        <div>
+                            <label for="signup-business-name" class="block text-sm font-medium text-gray-300">Business Name</label>
+                            <input type="text" id="signup-business-name" required class="mt-1 block w-full border border-gray-600 bg-gray-700 rounded-md shadow-sm p-3 text-lg text-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="signup-admin-name" class="block text-sm font-medium text-gray-300">Your Full Name (Admin)</label>
+                            <input type="text" id="signup-admin-name" required class="mt-1 block w-full border border-gray-600 bg-gray-700 rounded-md shadow-sm p-3 text-lg text-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="signup-email" class="block text-sm font-medium text-gray-300">Your Email Address</label>
+                            <input type="email" id="signup-email" autocomplete="email" required class="mt-1 block w-full border border-gray-600 bg-gray-700 rounded-md shadow-sm p-3 text-lg text-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="signup-password" class="block text-sm font-medium text-gray-300">Create Password</label>
+                            <input type="password" id="signup-password" autocomplete="new-password" required class="mt-1 block w-full border border-gray-600 bg-gray-700 rounded-md shadow-sm p-3 text-lg text-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+						
+                        <p id="signup-error" class="text-red-400 text-sm hidden" aria-live="assertive"></p> 
+                        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-green-700 transition">Create Account</button>
+                    </form>
+                </div>
+                <div id="waiter-login-form-section" class="form-section">
+                    <form id="waiter-login-form" class="space-y-6">
+                        <h2 class="text-2xl font-bold text-center text-white">Waiter Sign In</h2>
+                        <div>
+                            <label for="waiter-business-id" class="block text-sm font-medium text-gray-300">Business ID</label>
+                            <input type="text" id="waiter-business-id" required class="mt-1 block w-full border border-gray-600 bg-gray-700 rounded-md shadow-sm p-3 text-lg text-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="waiter-username" class="block text-sm font-medium text-gray-300">Select Your Name</label>
+                            <select id="waiter-username" required class="mt-1 block w-full border border-gray-600 bg-gray-700 rounded-md shadow-sm p-3 text-lg text-gray-200 focus:ring-blue-500 focus:border-blue-500" disabled>
+                                <option>Enter Business ID first</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="waiter-password" class="block text-sm font-medium text-gray-300">Password / PIN</label>
+                            <input type="password" id="waiter-password" required class="mt-1 block w-full border border-gray-600 bg-gray-700 rounded-md shadow-sm p-3 text-lg text-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <p id="waiter-login-error" class="text-red-400 text-sm hidden" aria-live="assertive">Invalid details.</p>
+                        <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-purple-700 transition">Sign In</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App (Initially Hidden) -->
+    <div id="app" class="max-w-7xl mx-auto p-4 hidden">
+        <header class="bg-gray-800 rounded-lg shadow p-4 mb-4 flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <h1 id="business-name-header" class="text-2xl font-bold text-gray-100">BarSoko POS</h1>
+                <p id="user-info" class="text-sm text-gray-400">Welcome!</p>
+            </div>
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                 <div id="online-status-indicator" class="flex items-center space-x-2"></div>
+                <button id="logout-btn" aria-label="Log out" class="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition flex items-center space-x-2">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </header>
+        
+        <div id="ai-insights-bar" class="ai-bar p-4 rounded-lg mb-4 flex items-center gap-4 hidden">
+            <i class="fas fa-brain text-3xl text-white opacity-80"></i>
+            <div>
+                <h3 class="font-bold text-white">Soko AI Insights</h3>
+                <p id="ai-insight-text" class="text-sm text-blue-100">Generate a report to get AI-powered business insights.</p>
+            </div>
+        </div>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 space-y-4">
+                <section aria-labelledby="open-bills-heading" class="bg-gray-800 rounded-lg shadow p-6">
+                    <h2 id="open-bills-heading" class="text-xl font-semibold mb-4 text-gray-100">Open Bills</h2>
+                    <div id="open-bills-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3"></div>
+                </section>
+
+                <section aria-labelledby="pos-heading" class="bg-gray-800 rounded-lg shadow p-6">
+                    <div class="flex justify-between items-center mb-4">
+                         <h2 id="pos-heading" class="text-xl font-semibold text-gray-100">Point of Sale</h2>
+                         <div id="current-bill-info" class="text-lg font-bold text-blue-400"></div>
+                    </div>
+                     <div class="my-4">
+                        <input type="search" id="product-search" placeholder="Search products..." class="w-full p-2 bg-gray-700 border border-gray-600 rounded-md">
+                    </div>
+                    <div id="product-categories" class="flex flex-wrap gap-2 mb-4"></div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="product-grid" role="grid"></div>
+                    <hr class="my-6 border-gray-700">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-100">Current Order</h3>
+                    <div id="cart" class="space-y-2"></div>
+                    <div id="cart-summary" class="mt-6 pt-4 border-t-2 border-dashed border-gray-700">
+                        <div class="flex justify-between items-center text-lg">
+                            <span>Subtotal:</span><span id="cart-subtotal">Ksh 0.00</span>
+                        </div>
+                        <div id="discount-display" class="flex justify-between items-center text-lg text-green-400 hidden">
+                            <span>Discount:</span><span id="discount-amount">Ksh 0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-2xl font-bold mt-2">
+                            <span id="total-label">Total:</span><span id="cart-total">Ksh 0.00</span>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <button id="save-bill-btn" class="bg-orange-500 text-white py-3 rounded-lg text-lg font-semibold hover:bg-orange-600 transition disabled:bg-gray-400" disabled><i class="fas fa-save mr-2"></i>Save</button>
+                            <button id="pay-cash-btn" class="bg-green-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-green-700 transition disabled:bg-gray-400" disabled><i class="fas fa-money-bill-wave mr-2"></i>Cash</button>
+                            <button id="pay-mpesa-btn" class="bg-emerald-500 text-white py-3 rounded-lg text-lg font-semibold hover:bg-emerald-600 transition disabled:bg-gray-400 flex items-center justify-center" disabled><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1280px-M-PESA_LOGO-01.svg.png" class="h-5 mr-2" alt="M-PESA"> M-Pesa</button>
+                            <button id="pay-card-btn" class="bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400" disabled><i class="fas fa-credit-card mr-2"></i>Card</button>
+                        </div>
+                        <div class="mt-2 grid grid-cols-3 gap-4">
+                             <button id="apply-discount-btn" class="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition disabled:bg-gray-400" disabled><i class="fas fa-tag mr-2"></i>Discount</button>
+                            <button id="clear-cart-btn" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition disabled:bg-gray-400" disabled>Clear/Close Bill</button>
+                            <button id="print-bill-btn" class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition disabled:bg-gray-400" disabled><i class="fas fa-print mr-2"></i>Print Bill</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="bg-gray-800 rounded-lg shadow p-6">
+                <div id="shift-management-panel" class="bg-gray-700/50 p-4 rounded-lg mb-6"></div>
+                <div class="mb-6">
+                    <nav id="tabs" role="tablist" aria-label="Management Tabs"></nav>
+                </div>
+                <!-- Tab Panels -->
+                <div id="tab-content-dashboard" role="tabpanel" class="mt-6 hidden">
+                     <div class="space-y-6">
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <h3 class="font-semibold text-gray-200 mb-2">Last 7 Days Sales</h3>
+                            <canvas id="sales-chart"></canvas>
+                        </div>
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <h3 class="font-semibold text-gray-200 mb-2">Sales by Category</h3>
+                            <canvas id="category-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div id="tab-content-products" role="tabpanel" class="mt-6 hidden">
+                    <form id="add-product-form" class="space-y-4">
+                        <div><label for="product-name" class="block text-sm font-medium text-gray-300">Product Name</label><input type="text" id="product-name" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md" required></div>
+                        <div><label for="product-price" class="block text-sm font-medium text-gray-300">Price (Ksh)</label><input type="number" id="product-price" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md" required min="0"></div>
+                        <div>
+                            <label for="product-category" class="block text-sm font-medium text-gray-300">Category</label>
+                            <select id="product-category" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md"></select>
+                        </div>
+                        <div><label for="product-stock" class="block text-sm font-medium text-gray-300">Initial Stock</label><input type="number" id="product-stock" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md" required min="0"></div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition">Add Product</button>
+                    </form>
+                    <hr class="my-6 border-gray-600">
+                    <h3 class="font-semibold text-gray-200 mb-2">Existing Products</h3>
+                    <div id="product-list-management" class="space-y-2"></div>
+                </div>
+                <div id="tab-content-my-sales" role="tabpanel" class="mt-6 hidden"></div>
+                <div id="tab-content-all-sales" role="tabpanel" class="mt-6 hidden"></div>
+                <div id="tab-content-reports" role="tabpanel" class="mt-6 hidden">
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-200 mb-3 border-b border-gray-700 pb-2">Sales Reports</h3>
+                            <div class="space-y-4">
+                                <div class="flex flex-wrap gap-2">
+                                    <button data-range="daily" class="report-btn flex-1 bg-gray-700 text-white py-2 px-4 rounded-lg shadow hover:bg-gray-600">Daily</button>
+                                    <button data-range="90days" class="report-btn flex-1 bg-gray-700 text-white py-2 px-4 rounded-lg shadow hover:bg-gray-600">Last 90 Days</button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="report-start-date" class="block text-sm font-medium text-gray-300">Start Date</label>
+                                        <input type="date" id="report-start-date" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md">
+                                    </div>
+                                    <div>
+                                        <label for="report-end-date" class="block text-sm font-medium text-gray-300">End Date</label>
+                                        <input type="date" id="report-end-date" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md">
+                                    </div>
+                                </div>
+                                <button id="generate-report-btn" class="report-btn w-full bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 flex items-center justify-center">
+                                    <i class="fas fa-cogs mr-2"></i> Generate Custom Report
+                                </button>
+                            </div>
+                            <div id="report-feedback" class="text-center p-2 rounded-md my-4 hidden" aria-live="polite"></div>
+                            <div id="download-options" class="flex flex-col sm:flex-row gap-2 hidden">
+                                <button id="download-summary-btn" class="report-btn flex-1 bg-green-600 text-white py-2 px-4 rounded-lg shadow hover:bg-green-700 flex items-center justify-center">
+                                    <i class="fas fa-file-alt mr-2"></i> Download Summary
+                                </button>
+                                <button id="download-full-btn" class="report-btn flex-1 bg-teal-600 text-white py-2 px-4 rounded-lg shadow hover:bg-teal-700 flex items-center justify-center">
+                                    <i class="fas fa-file-csv mr-2"></i> Download Full Report
+                                </button>
+                                <button id="print-report-btn" class="report-btn flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg shadow hover:bg-gray-600 flex items-center justify-center">
+                                    <i class="fas fa-print mr-2"></i> Print Summary
+                                </button>
+                            </div>
+                        </div>
+                        <hr class="my-4 border-gray-600">
+                        <div id="report-output-container" class="bg-gray-900/50 p-4 rounded-lg">
+                            <h4 class="text-lg font-semibold mb-2">Report Results</h4>
+                            <div id="report-output" class="text-gray-300">Select a date range and generate a report to see results.</div>
+                        </div>
+                    </div>
+
+                </div>
+                 <div id="tab-content-customers" role="tabpanel" class="mt-6 hidden">
+                    <button id="add-customer-btn" class="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition">Add New Customer</button>
+                    <hr class="my-6 border-gray-600">
+                    <div id="customer-list-management" class="space-y-2"></div>
+                </div>
+                <div id="tab-content-waiters" role="tabpanel" class="mt-6 hidden">
+                    <button id="add-user-btn" class="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition">Add New Waiter</button>
+                    <hr class="my-6 border-gray-600">
+                    <div id="user-list-management" class="space-y-2"></div>
+                </div>
+                 <div id="tab-content-categories" role="tabpanel" class="mt-6 hidden">
+                    <form id="add-category-form" class="space-y-4">
+                        <div><label for="category-name" class="block text-sm font-medium text-gray-300">New Category Name</label><input type="text" id="category-name" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md" required></div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition">Add Category</button>
+                    </form>
+                    <hr class="my-6 border-gray-600">
+                    <h3 class="font-semibold text-gray-200 mb-2">Existing Categories</h3>
+                    <div id="category-list-management" class="space-y-2"></div>
+                </div>
+                <div id="tab-content-settings" role="tabpanel" class="mt-6 hidden">
+                    <div class="space-y-6"> 
+						<section aria-labelledby="subscription-heading">
+    <h3 id="subscription-heading" class="text-lg font-semibold text-gray-200 mb-3 border-b border-gray-700 pb-2">Manage Subscription</h3>
+    <div class="bg-gray-700/50 p-4 rounded-lg space-y-4">
+        <div>
+            <p class="text-sm font-medium text-gray-300">Current Status</p>
+            <p id="subscription-status-display" class="text-lg font-semibold text-green-400">1-Month Free Trial</p>
+        </div>
+        
+        <div>
+            <p class="text-sm font-medium text-gray-300">Choose Your Plan</p>
+            <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button id="monthly-plan-btn" class="text-left p-4 border-2 border-gray-600 rounded-lg hover:border-blue-500 focus:border-blue-500">
+                    <h4 class="font-bold text-white">Monthly Plan</h4>
+                    <p class="text-xl font-bold text-blue-400">Ksh 1,000 / month</p>
+                    <p class="text-xs text-gray-400">Billed monthly.</p>
+                </button>
+                 <button id="yearly-plan-btn" class="text-left p-4 border-2 border-gray-600 rounded-lg hover:border-blue-500 focus:border-blue-500">
+                    <h4 class="font-bold text-white">Yearly Plan</h4>
+                    <p class="text-xl font-bold text-blue-400">Ksh 10,000 / year</p>
+                    <p class="text-xs text-green-400">Save 2 months! Best value.</p>
+                </button>
+            </div>
+        </div>
+
+        <div id="payment-form-container" class="hidden pt-4 border-t border-gray-600">
+             <h4 class="font-semibold text-white mb-2">Confirm Payment</h4>
+             <div>
+                <label for="payment-mpesa-number" class="block text-sm font-medium text-gray-300">M-PESA Phone Number</label>
+                <input type="tel" id="payment-mpesa-number" placeholder="e.g., 254712345678" class="mt-1 block w-full border p-2 bg-gray-900 border-gray-600 rounded-md">
+            </div>
+            <button id="pay-now-btn" class="mt-4 w-full bg-green-600 text-white py-2 rounded-lg shadow hover:bg-green-700 transition">Pay Now</button>
+        </div>
+    </div>
+</section>
+                         <section aria-labelledby="discounts-heading">
+                            <h3 id="discounts-heading" class="text-lg font-semibold text-gray-200 mb-3 border-b border-gray-700 pb-2">Discounts & Promotions</h3>
+                            <form id="add-discount-form" class="space-y-4">
+                                <div><label for="discount-name" class="block text-sm font-medium text-gray-300">Discount Name</label><input type="text" id="discount-name" placeholder="e.g., Happy Hour" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md" required></div>
+                                <div><label for="discount-percentage" class="block text-sm font-medium text-gray-300">Percentage (%)</label><input type="number" id="discount-percentage" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md" required min="1" max="100"></div>
+                                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition">Add Discount</button>
+                            </form>
+                            <hr class="my-6 border-gray-600">
+                            <h3 class="font-semibold text-gray-200 mb-2">Existing Discounts</h3>
+                            <div id="discount-list-management" class="space-y-2"></div>
+                        </section>
+                        <section aria-labelledby="security-heading">
+                            <h3 id="security-heading" class="text-lg font-semibold text-gray-200 mb-3 border-b border-gray-700 pb-2">Security</h3>
+                            <button id="change-my-password-btn" class="w-full bg-gray-700 text-white py-2 rounded-lg shadow hover:bg-gray-600 transition">Change My Password</button>
+                        </section>
+                        <section aria-labelledby="business-heading" id="business-settings-section">
+                            <h3 id="business-heading" class="text-lg font-semibold text-gray-200 mb-3 border-b border-gray-700 pb-2">Business Setup</h3>
+                            <div class="space-y-4">
+                                <div id="business-id-display" class="p-3 bg-gray-700/50 rounded-md">
+                                    <label class="block text-sm font-medium text-gray-300">Your Business ID</label>
+                                    <p class="text-lg font-mono text-blue-400 break-words"></p>
+                                    <small class="text-gray-400">Share this ID with your waiters to allow them to log in.</small>
+                                </div>
+                                <div>
+                                    <label for="business-name" class="block text-sm font-medium text-gray-300">Business Name</label>
+                                    <input type="text" id="business-name" placeholder="e.g., The Watering Hole" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md">
+                                </div>
+                                <div>
+                                    <label for="mpesa-till" class="block text-sm font-medium text-gray-300">M-PESA Till Number</label>
+                                    <input type="text" id="mpesa-till" placeholder="e.g., 123456" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md">
+                                    <p id="till-error" class="text-red-500 text-sm mt-1 hidden" aria-live="assertive"></p>
+                                </div>
+                                <button id="save-settings-btn" class="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition mt-2">Save Settings</button>
+                            </div>
+                        </section>
+                        <section aria-labelledby="data-heading" id="data-management-section">
+                            <h3 id="data-heading" class="text-lg font-semibold text-red-400 mb-3 border-b border-red-800 pb-2">Danger Zone</h3>
+                            <p class="text-sm text-gray-400 mb-3">These actions are permanent and cannot be undone. They will affect all users.</p>
+                            <button id="clear-transactions-btn" class="w-full bg-red-800 text-white py-2 rounded-lg shadow hover:bg-red-900 transition">Clear All Sales Data</button>
+                        </section>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- General Purpose Modal -->
+    <div id="modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content">
+            <h2 id="modal-title" class="text-xl font-bold mb-4 text-gray-100">Modal Title</h2>
+            <div id="modal-body"><p>Modal content goes here.</p></div>
+            <div id="modal-footer" class="mt-6 flex justify-end space-x-4">
+                <button id="modal-close-btn" class="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-lg hover:bg-gray-500">Close</button>
+                <button id="modal-confirm-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Confirm</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Print Preview Modal -->
+    <div id="print-preview-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4 text-gray-100">Print Preview</h2>
+            <div id="print-preview-area" class="bg-white p-4 border rounded-md overflow-y-auto max-h-96">
+                <!-- Receipt content will be injected here -->
+            </div>
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="print-preview-close" class="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-lg hover:bg-gray-500">Cancel</button>
+                <button id="print-preview-copy" class="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-600">Print Copy</button>
+                <button id="print-preview-final" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Print Original</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Print Area -->
+    <div id="print-area" class="hidden"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+    // This is the main entry point of the application.
+    // All JavaScript logic is contained within this single module.
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, serverTimestamp, enableMultiTabIndexedDbPersistence, deleteField, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    
+    // --- CONFIGURATION ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAb5Nqhz9fPHAHVkC-_Dx6JErPp_40kJfY",
+      authDomain: "tabster-c399a.firebaseapp.com",
+      projectId: "tabster-c399a",
+      storageBucket: "tabster-c399a.firebasestorage.app",
+      messagingSenderId: "556284645911",
+      appId: "1:556284645911:web:46d4ec850d3d7a13b84252",
+      measurementId: "G-YETJ2RLP2P"
+    };
+    
+    // --- INITIALIZATION ---
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- GLOBAL STATE ---
+    window.state = {
+        products: [],
+        sales: [],
+        openBills: [],
+        settings: { businessName: 'BarSoko POS', mpesaTill: '' },
+        users: [],
+        categories: [],
+        shifts: [],
+        customers: [],
+        discounts: [],
+        currentUser: null,
+        currentBillId: null,
+        cart: [],
+        generatedReport: null,
+        pendingSales: [],
+        isSubscriptionExpired: false,
+    };
+
+    // --- DOM ELEMENTS ---
+    const loginScreen = document.getElementById('login-screen');
+    const appDiv = document.getElementById('app');
+    
+    const adminLoginTab = document.getElementById('admin-login-tab');
+    const signupTab = document.getElementById('signup-tab');
+    const waiterLoginTab = document.getElementById('waiter-login-tab');
+
+    const adminLoginFormSection = document.getElementById('admin-login-form-section');
+    const signupFormSection = document.getElementById('signup-form-section');
+    const waiterLoginFormSection = document.getElementById('waiter-login-form-section');
+    
+    const adminLoginForm = document.getElementById('admin-login-form');
+    const signupForm = document.getElementById('signup-form');
+    const waiterLoginForm = document.getElementById('waiter-login-form');
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    
+    const logoutBtn = document.getElementById('logout-btn');
+    const firestoreStatusDiv = document.getElementById('firestore-status');
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const modalFooter = document.getElementById('modal-footer');
+    const userInfo = document.getElementById('user-info');
+    const businessNameHeader = document.getElementById('business-name-header');
+    const onlineStatusIndicator = document.getElementById('online-status-indicator');
+    const openBillsContainer = document.getElementById('open-bills-container');
+    const productCategoriesNav = document.getElementById('product-categories');
+    const productGrid = document.getElementById('product-grid');
+    const cartDiv = document.getElementById('cart');
+    const cartTotalSpan = document.getElementById('cart-total');
+    const cartSubtotalSpan = document.getElementById('cart-subtotal');
+    const discountDisplay = document.getElementById('discount-display');
+    const discountAmountSpan = document.getElementById('discount-amount');
+    const currentBillInfo = document.getElementById('current-bill-info');
+    const payCashBtn = document.getElementById('pay-cash-btn');
+    const payMpesaBtn = document.getElementById('pay-mpesa-btn');
+    const payCardBtn = document.getElementById('pay-card-btn');
+    const saveBillBtn = document.getElementById('save-bill-btn');
+    const clearCartBtn = document.getElementById('clear-cart-btn');
+    const printBillBtn = document.getElementById('print-bill-btn');
+    const applyDiscountBtn = document.getElementById('apply-discount-btn');
+    const shiftManagementPanel = document.getElementById('shift-management-panel');
+    const tabsContainer = document.getElementById('tabs');
+    const tabContents = {
+        dashboard: document.getElementById('tab-content-dashboard'),
+        products: document.getElementById('tab-content-products'),
+        'my-sales': document.getElementById('tab-content-my-sales'),
+        'all-sales': document.getElementById('tab-content-all-sales'),
+        reports: document.getElementById('tab-content-reports'),
+        customers: document.getElementById('tab-content-customers'),
+        waiters: document.getElementById('tab-content-waiters'),
+        categories: document.getElementById('tab-content-categories'),
+        settings: document.getElementById('tab-content-settings'),
+    };
+    const productListManagement = document.getElementById('product-list-management');
+    const userListManagement = document.getElementById('user-list-management');
+    const categoryListManagement = document.getElementById('category-list-management');
+    const customerListManagement = document.getElementById('customer-list-management');
+    const discountListManagement = document.getElementById('discount-list-management');
+    const printPreviewModal = document.getElementById('print-preview-modal');
+    const printPreviewArea = document.getElementById('print-preview-area');
+    const printArea = document.getElementById('print-area');
+    const aiInsightsBar = document.getElementById('ai-insights-bar');
+    const aiInsightText = document.getElementById('ai-insight-text');
+    
+    // Report Section Elements
+    const generateReportBtn = document.getElementById('generate-report-btn');
+    const downloadOptions = document.getElementById('download-options');
+    const downloadSummaryBtn = document.getElementById('download-summary-btn');
+    const downloadFullBtn = document.getElementById('download-full-btn');
+    const printReportBtn = document.getElementById('print-report-btn');
+    const reportFeedbackDiv = document.getElementById('report-feedback');
+    const reportOutputDiv = document.getElementById('report-output');
+
+    // Subscription elements
+    const monthlyPlanBtn = document.getElementById('monthly-plan-btn');
+    const yearlyPlanBtn = document.getElementById('yearly-plan-btn');
+    const paymentFormContainer = document.getElementById('payment-form-container');
+    const payNowBtn = document.getElementById('pay-now-btn');
+    const paymentMpesaNumberInput = document.getElementById('payment-mpesa-number');
+    const subscriptionStatusDisplay = document.getElementById('subscription-status-display');
+
+    // Chart instances
+    let salesChartInstance = null;
+    let categoryChartInstance = null;
+
+    // --- OFFLINE FIX: PENDING SALES QUEUE MANAGEMENT ---
+    function savePendingSalesToLocal() {
+        if (!window.state.currentUser) return;
+        try {
+            const pendingSalesData = JSON.stringify(window.state.pendingSales);
+            localStorage.setItem(`pendingSales_${window.state.currentUser.businessId}`, pendingSalesData);
+            console.log(`${window.state.pendingSales.length} pending sales saved locally.`);
+        } catch (e) {
+            console.error("Could not save pending sales to localStorage:", e);
+        }
+        updateOnlineStatus();
+    }
+
+    function loadPendingSalesFromLocal() {
+        if (!window.state.currentUser) return;
+        try {
+            const pendingSalesData = localStorage.getItem(`pendingSales_${window.state.currentUser.businessId}`);
+            if (pendingSalesData) {
+                window.state.pendingSales = JSON.parse(pendingSalesData);
+                console.log(`Loaded ${window.state.pendingSales.length} pending sales from localStorage.`);
+            }
+        } catch (e) {
+            console.error("Could not load pending sales from localStorage:", e);
+            window.state.pendingSales = [];
+        }
+        updateOnlineStatus();
+    }
+
+    async function syncPendingSales(db) {
+        if (!navigator.onLine || window.state.pendingSales.length === 0) {
+            console.log("Sync skipped: App is offline or no pending sales.");
+            return;
+        }
+
+        console.log(`Starting sync of ${window.state.pendingSales.length} pending sales...`);
+        showModal('Syncing...', `Attempting to sync ${window.state.pendingSales.length} offline sale(s). Please wait.`, () => {}, false);
+
+        const salesToSync = [...window.state.pendingSales];
+        window.state.pendingSales = []; 
+        savePendingSalesToLocal();
+
+        for (const sale of salesToSync) {
+            try {
+                const batch = writeBatch(db);
+                
+                sale.items.forEach(cartItem => {
+                    const productRef = doc(db, "products", cartItem.productId);
+                    const product = window.state.products.find(p => p.id === cartItem.productId);
+                    if(product) {
+                       const newStock = Math.max(0, product.stock - cartItem.quantity);
+                       batch.update(productRef, { stock: newStock });
+                    }
+                });
+
+                const saleRef = doc(collection(db, "sales"));
+                sale.date = serverTimestamp();
+                batch.set(saleRef, sale);
+
+                if (sale.shiftId && sale.shiftId !== 'N/A') {
+                    const shiftRef = doc(db, "shifts", sale.shiftId);
+                    const shiftDoc = await getDoc(shiftRef);
+                    if (shiftDoc.exists()) {
+                        const currentSales = shiftDoc.data().sales || [];
+                        const updatedSales = [...currentSales, { id: saleRef.id, total: sale.total }];
+                        batch.update(shiftRef, { sales: updatedSales });
+                    }
+                }
+
+                if (sale.originalBillId) {
+                    const billRef = doc(db, "openBills", sale.originalBillId);
+                    batch.delete(billRef);
+                }
+
+                await batch.commit();
+                console.log(`Successfully synced sale created at ${new Date(sale.offlineTimestamp).toLocaleTimeString()}`);
+
+            } catch (error) {
+                console.error("Failed to sync a pending sale:", error, sale);
+                window.state.pendingSales.push(sale);
+            }
+        }
+
+        savePendingSalesToLocal();
+        
+        if (window.state.pendingSales.length === 0) {
+            showModal('Sync Complete', 'All offline sales have been successfully synced to the server.', () => true, false);
+        } else {
+            showModal('Sync Incomplete', `${window.state.pendingSales.length} sale(s) could not be synced. They will be retried later.`, () => true, false);
+        }
+    }
+
+
+    // --- AUTHENTICATION & LOGIN LOGIC ---
+
+    function listenForAuthChanges(auth, db) {
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                if (window.state.currentUser) {
+                    return;
+                }
+
+                console.log("Auth state changed for user:", user.uid, ". Checking for existing profile.");
+                
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    console.log("Returning admin user found. Logging in.");
+                    loginUser({ uid: user.uid, id: user.uid, ...userDoc.data() }, db);
+                } else {
+                    console.log("User profile not found or is not an admin. Awaiting sign-up or waiter login flow.");
+                }
+            } else {
+                if (window.state.currentUser) {
+                    console.log("User logged out. Resetting app state.");
+                    window.state.currentUser = null;
+                    stopAllListeners();
+                    hideApp();
+                }
+            }
+        });
+    }
+    
+    async function loginUser(userObject, db) {
+        window.state.currentUser = userObject;
+        console.log("User profile loaded:", window.state.currentUser);
+        
+        loadPendingSalesFromLocal();
+        setTimeout(() => syncPendingSales(db), 3000);
+
+        // Check if initial data needs to be set up
+        const productsQuery = query(collection(db, "products"), where("businessId", "==", userObject.businessId));
+        const productsSnapshot = await getDocs(productsQuery);
+        if (productsSnapshot.empty) {
+            await setupInitialData(db, userObject.businessId);
+        }
+
+        listenToAllData(db);
+        showApp();
+        setupAppEventListeners(auth, db);
+    }
+
+    async function handleAdminLogin(e, auth) {
+        e.preventDefault();
+        const email = document.getElementById('admin-email').value;
+        const password = document.getElementById('admin-password').value;
+        const errorP = document.getElementById('admin-login-error');
+        errorP.classList.add('hidden');
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            console.error("Admin Login failed:", error.code);
+            errorP.textContent = getAuthErrorMessage(error.code);
+            errorP.classList.remove('hidden');
+        }
+    }
+
+    async function handleWaiterLogin(e, db) {
+        e.preventDefault();
+        const businessId = document.getElementById('waiter-business-id').value.trim();
+        const userId = document.getElementById('waiter-username').value;
+        const password = document.getElementById('waiter-password').value.trim();
+        const errorP = document.getElementById('waiter-login-error');
+        errorP.classList.add('hidden');
+
+        if (!businessId || !userId) {
+            errorP.textContent = "Business ID and name are required.";
+            errorP.classList.remove('hidden');
+            return;
+        }
+
+        const userDocRef = doc(db, "users", userId);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists() && userDoc.data().businessId === businessId && userDoc.data().password === password) {
+            console.log("Waiter login successful:", userDoc.data().name);
+            localStorage.setItem('barsokoBusinessId', businessId);
+            loginUser({ id: userDoc.id, ...userDoc.data() }, db);
+        } else {
+            errorP.textContent = "Invalid details provided.";
+            errorP.classList.remove('hidden');
+        }
+    }
+
+    function handleLogout(auth) {
+        signOut(auth).catch(error => console.error("Logout failed:", error));
+        
+        if (window.state.currentUser && window.state.currentUser.role === 'waiter') {
+             console.log("Waiter logged out.");
+             window.state.currentUser = null;
+             stopAllListeners();
+             hideApp();
+        }
+    }
+
+    function handleForgotPassword(e, auth) {
+        e.preventDefault();
+        const content = `<div><label for="reset-email-input" class="block text-sm font-medium text-gray-300">Enter your admin email address</label><input type="email" id="reset-email-input" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md" required></div>`;
+        showModal('Reset Password', content, () => {
+            const email = document.getElementById('reset-email-input').value;
+            if (!email) return false;
+
+            sendPasswordResetEmail(auth, email)
+                .then(() => {
+                    showModal('Check Your Email', `A password reset link has been sent to ${email}.`, () => true, false);
+                })
+                .catch((error) => {
+                    showModal('Error', `Could not send reset email. ${getAuthErrorMessage(error.code)}`, () => true, false);
+                });
+            return true;
+        });
+    }
+
+    async function handleSignUp(e, auth, db) {
+        e.preventDefault();
+        const businessName = document.getElementById('signup-business-name').value;
+        const adminName = document.getElementById('signup-admin-name').value;
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        const errorP = document.getElementById('signup-error');
+        errorP.classList.add('hidden');
+
+        if (!businessName || !adminName || !email || password.length < 6) {
+            errorP.textContent = "Please fill all fields. Password must be at least 6 characters.";
+            errorP.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            const trialEndDate = new Date();
+            trialEndDate.setDate(trialEndDate.getDate() + 30);
+
+            const businessRef = await addDoc(collection(db, "businesses"), {
+                name: businessName,
+                owner: user.uid,
+                createdAt: serverTimestamp(),
+                subscriptionStatus: 'trial',
+                subscriptionEndDate: Timestamp.fromDate(trialEndDate)
+            });
+            const businessId = businessRef.id;
+
+            const userProfile = {
+                name: adminName,
+                email: email,
+                role: 'admin',
+                businessId: businessId,
+                createdAt: new Date().toISOString()
+            };
+            await setDoc(doc(db, "users", user.uid), userProfile);
+            
+            showModal('Success', 'Account created! You will be logged in automatically.', () => true, false);
+            loginUser({ uid: user.uid, id: user.uid, ...userProfile }, db);
+
+
+        } catch (error) {
+            console.error("Sign up failed:", error);
+            errorP.textContent = getAuthErrorMessage(error.code);
+            errorP.classList.remove('hidden');
+        }
+    }
+
+    function getAuthErrorMessage(errorCode) {
+        switch (errorCode) {
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+                return 'Invalid email or password.';
+            case 'auth/invalid-email':
+                return 'Please enter a valid email address.';
+            case 'auth/email-already-in-use':
+                return 'This email address is already in use.';
+            case 'auth/weak-password':
+                return 'The password is too weak. It must be at least 6 characters.';
+            default:
+                return 'An unexpected error occurred. Please try again.';
+        }
+    }
+
+    // --- FIRESTORE SERVICE LOGIC ---
+    
+    let unsubscribes = [];
+
+    function stopAllListeners() {
+        unsubscribes.forEach(unsub => unsub());
+        unsubscribes = [];
+        console.log("All Firestore listeners stopped.");
+    }
+
+    function listenToAllData(db) {
+        console.log("Starting Firestore listeners...");
+        stopAllListeners();
+        const businessId = window.state.currentUser.businessId;
+        if (!businessId) {
+            console.error("CRITICAL: No Business ID found for current user. Cannot listen to data.");
+            handleLogout(auth);
+            return;
+        }
+
+        const businessDocUnsub = onSnapshot(doc(db, "businesses", businessId), (doc) => {
+            window.state.settings = { businessId, ...doc.data() } || { businessName: 'BarSoko POS', mpesaTill: '' };
+            checkSubscriptionStatus();
+            renderAllUI();
+        });
+        unsubscribes.push(businessDocUnsub);
+
+        const productsQuery = query(collection(db, "products"), where("businessId", "==", businessId));
+        const productsUnsub = onSnapshot(productsQuery, (snapshot) => {
+            window.state.products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderAllUI();
+        });
+        unsubscribes.push(productsUnsub);
+
+        const categoriesQuery = query(collection(db, "categories"), where("businessId", "==", businessId));
+        const categoriesUnsub = onSnapshot(categoriesQuery, (snapshot) => {
+            window.state.categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.name.localeCompare(b.name));
+            renderAllUI();
+        });
+        unsubscribes.push(categoriesUnsub);
+        
+        const openBillsQuery = query(collection(db, "openBills"), where("businessId", "==", businessId));
+        const openBillsUnsub = onSnapshot(openBillsQuery, (snapshot) => {
+            window.state.openBills = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderAllUI();
+        });
+        unsubscribes.push(openBillsUnsub);
+
+        const shiftsQuery = query(collection(db, "shifts"), where("businessId", "==", businessId));
+        const shiftsUnsub = onSnapshot(shiftsQuery, (snapshot) => {
+            window.state.shifts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderAllUI();
+        });
+        unsubscribes.push(shiftsUnsub);
+
+        const usersQuery = query(collection(db, "users"), where("businessId", "==", businessId));
+        const usersUnsub = onSnapshot(usersQuery, (snapshot) => {
+            window.state.users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderAllUI();
+        });
+        unsubscribes.push(usersUnsub);
+
+        const salesQuery = query(collection(db, "sales"), where("businessId", "==", businessId));
+        const salesUnsub = onSnapshot(salesQuery, (snapshot) => {
+            window.state.sales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderAllUI();
+        });
+        unsubscribes.push(salesUnsub);
+
+        const customersQuery = query(collection(db, "customers"), where("businessId", "==", businessId));
+        const customersUnsub = onSnapshot(customersQuery, (snapshot) => {
+            window.state.customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderAllUI();
+        });
+        unsubscribes.push(customersUnsub);
+
+        const discountsQuery = query(collection(db, "discounts"), where("businessId", "==", businessId));
+        const discountsUnsub = onSnapshot(discountsQuery, (snapshot) => {
+            window.state.discounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderAllUI();
+        });
+        unsubscribes.push(discountsUnsub);
+    }
+
+    async function setupInitialData(db, businessId) {
+        console.log(`Setting up initial data for business ${businessId}...`);
+        const batch = writeBatch(db);
+
+        const categories = ['Beers', 'Ciders', 'Spirits', 'Wines', 'Soft Drinks', 'Other'];
+        categories.forEach(name => {
+            const catRef = doc(collection(db, "categories"));
+            batch.set(catRef, { name, businessId });
+        });
+
+        const products = [
+            // --- Beers ---
+            { name: 'Tusker Lager', price: 350, stock: 120, category: 'Beers', isFavorite: true, businessId },
+            { name: 'Tusker Malt', price: 350, stock: 96, category: 'Beers', isFavorite: true, businessId },
+            { name: 'Tusker Lite', price: 350, stock: 96, category: 'Beers', isFavorite: false, businessId },
+            { name: 'White Cap Lager', price: 350, stock: 72, category: 'Beers', isFavorite: true, businessId },
+            { name: 'White Cap Lite', price: 350, stock: 48, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Guinness', price: 400, stock: 96, category: 'Beers', isFavorite: true, businessId },
+            { name: 'Pilsner', price: 350, stock: 72, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Balozi', price: 300, stock: 48, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Heineken', price: 400, stock: 72, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Sierra Amber', price: 550, stock: 24, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Sierra Blonde', price: 550, stock: 24, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Budweiser', price: 400, stock: 48, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Corona', price: 500, stock: 48, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Desperados', price: 500, stock: 24, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Smirnoff Ice Black', price: 400, stock: 48, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Smirnoff Ice Red', price: 400, stock: 48, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Summit Lager', price: 300, stock: 48, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Summit Malt', price: 300, stock: 48, category: 'Beers', isFavorite: false, businessId },
+            { name: 'Tusker Can', price: 400, stock: 48, category: 'Beers', isFavorite: false, businessId },
+            { name: 'White Cap Can', price: 400, stock: 48, category: 'Beers', isFavorite: false, businessId },
+
+            // --- Ciders ---
+            { name: 'Savanna Dry', price: 450, stock: 72, category: 'Ciders', isFavorite: true, businessId },
+            { name: 'Hunters Dry', price: 450, stock: 48, category: 'Ciders', isFavorite: false, businessId },
+            { name: 'Hunters Gold', price: 450, stock: 48, category: 'Ciders', isFavorite: false, businessId },
+            { name: 'Tusker Cider', price: 400, stock: 72, category: 'Ciders', isFavorite: true, businessId },
+            { name: 'Sikera Cider', price: 400, stock: 48, category: 'Ciders', isFavorite: false, businessId },
+            { name: 'Savanna Light', price: 450, stock: 24, category: 'Ciders', isFavorite: false, businessId },
+            { name: 'Hunters Edge', price: 450, stock: 24, category: 'Ciders', isFavorite: false, businessId },
+            { name: 'Savanna Angry Lemon', price: 450, stock: 24, category: 'Ciders', isFavorite: false, businessId },
+            { name: 'Snapp', price: 350, stock: 24, category: 'Ciders', isFavorite: false, businessId },
+            { name: 'Guarana', price: 350, stock: 24, category: 'Ciders', isFavorite: false, businessId },
+
+            // --- Spirits (Bottles & Tots) ---
+            { name: 'Gilbeys Gin (Tot)', price: 200, stock: 500, category: 'Spirits', isFavorite: true, businessId },
+            { name: 'Johnnie Walker Black (Tot)', price: 450, stock: 200, category: 'Spirits', isFavorite: true, businessId },
+            { name: 'Jameson (Tot)', price: 350, stock: 300, category: 'Spirits', isFavorite: true, businessId },
+            { name: 'Captain Morgan (Tot)', price: 200, stock: 400, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Kenya Cane (KC) (Tot)', price: 150, stock: 500, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Smirnoff Vodka (750ml)', price: 2200, stock: 24, category: 'Spirits', isFavorite: true, businessId },
+            { name: 'Gilbeys Gin (750ml)', price: 2200, stock: 24, category: 'Spirits', isFavorite: true, businessId },
+            { name: 'Johnnie Walker Red (750ml)', price: 2800, stock: 12, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Johnnie Walker Black (750ml)', price: 4500, stock: 12, category: 'Spirits', isFavorite: true, businessId },
+            { name: 'Johnnie Walker Black (1L)', price: 5500, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Jameson (750ml)', price: 3500, stock: 12, category: 'Spirits', isFavorite: true, businessId },
+            { name: 'Jameson (1L)', price: 4200, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Hennessy VS (750ml)', price: 6500, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Hennessy VSOP (750ml)', price: 9000, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Jack Daniels (750ml)', price: 4000, stock: 12, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Jack Daniels (1L)', price: 4800, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Captain Morgan Gold (750ml)', price: 2000, stock: 24, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Bacardi White Rum (750ml)', price: 2500, stock: 12, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Absolut Vodka (750ml)', price: 2800, stock: 12, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Absolut Vodka (1L)', price: 3400, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Ciroc Vodka (750ml)', price: 5000, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Grey Goose Vodka (750ml)', price: 6000, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Tanqueray Gin (750ml)', price: 3800, stock: 12, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Bombay Sapphire Gin (750ml)', price: 4200, stock: 12, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Hendricks Gin (750ml)', price: 7000, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Kenya Cane (KC) (750ml)', price: 1200, stock: 24, category: 'Spirits', isFavorite: true, businessId },
+            { name: 'Chrome Gin (750ml)', price: 1200, stock: 24, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Singleton 12yrs (750ml)', price: 6000, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Glenfiddich 12yrs (750ml)', price: 6500, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Glenlivet 12yrs (750ml)', price: 6500, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Chivas Regal 12yrs (750ml)', price: 5000, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Baileys (750ml)', price: 3000, stock: 12, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Amarula (750ml)', price: 2500, stock: 12, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Jose Cuervo Tequila (750ml)', price: 3500, stock: 12, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Don Julio Blanco (750ml)', price: 7000, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Jägermeister (1L)', price: 4000, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+            { name: 'Martell VS (750ml)', price: 5500, stock: 6, category: 'Spirits', isFavorite: false, businessId },
+
+            // --- Wines ---
+            { name: 'House Wine Red (Glass)', price: 500, stock: 100, category: 'Wines', isFavorite: true, businessId },
+            { name: 'House Wine White (Glass)', price: 500, stock: 100, category: 'Wines', isFavorite: true, businessId },
+            { name: 'House Wine Rose (Glass)', price: 500, stock: 50, category: 'Wines', isFavorite: false, businessId },
+            { name: '4th Street Red (Bottle)', price: 1800, stock: 24, category: 'Wines', isFavorite: false, businessId },
+            { name: '4th Street White (Bottle)', price: 1800, stock: 24, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Cellar Cask Red (Bottle)', price: 1600, stock: 36, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Cellar Cask White (Bottle)', price: 1600, stock: 36, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Four Cousins Red (Bottle)', price: 2000, stock: 24, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Four Cousins White (Bottle)', price: 2000, stock: 24, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Nederburg Cab Sauv (Bottle)', price: 2500, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Nederburg Sauv Blanc (Bottle)', price: 2500, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Drostdy Hof Red (Bottle)', price: 1800, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Drostdy Hof White (Bottle)', price: 1800, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Robertson Red (Bottle)', price: 2200, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Robertson White (Bottle)', price: 2200, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'KWV Red (Bottle)', price: 2400, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'KWV White (Bottle)', price: 2400, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Jacobs Creek Red (Bottle)', price: 2800, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Jacobs Creek White (Bottle)', price: 2800, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            { name: 'Frontera Red (Bottle)', price: 2000, stock: 12, category: 'Wines', isFavorite: false, businessId },
+            
+            // --- Soft Drinks ---
+            { name: 'Coca-Cola', price: 150, stock: 200, category: 'Soft Drinks', isFavorite: true, businessId },
+            { name: 'Coke Zero', price: 150, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Fanta Orange', price: 150, stock: 150, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Sprite', price: 150, stock: 150, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Krest Bitter Lemon', price: 150, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Stoney', price: 150, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Fanta Blackcurrant', price: 150, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Fanta Passion', price: 150, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Keringet Water (500ml)', price: 100, stock: 200, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Dasani Water (500ml)', price: 100, stock: 200, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Keringet Water (1L)', price: 200, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Alvaro', price: 200, stock: 50, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Minute Maid Juice', price: 200, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Afia Juice', price: 200, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Tonic Water', price: 150, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Soda Water', price: 150, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Red Bull', price: 400, stock: 50, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Monster Energy', price: 350, stock: 50, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Highlands Water (500ml)', price: 100, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+            { name: 'Aquamist Water (500ml)', price: 100, stock: 100, category: 'Soft Drinks', isFavorite: false, businessId },
+
+            // --- Other (Cocktails & More) ---
+            { name: 'Dawa Cocktail', price: 600, stock: 100, category: 'Other', isFavorite: true, businessId },
+            { name: 'Mojito', price: 700, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Long Island Iced Tea', price: 800, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Margarita', price: 650, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Cosmopolitan', price: 700, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Old Fashioned', price: 750, stock: 50, category: 'Other', isFavorite: false, businessId },
+            { name: 'Whiskey Sour', price: 700, stock: 50, category: 'Other', isFavorite: false, businessId },
+            { name: 'Gin & Tonic', price: 500, stock: 200, category: 'Other', isFavorite: true, businessId },
+            { name: 'Vodka & Tonic', price: 500, stock: 200, category: 'Other', isFavorite: false, businessId },
+            { name: 'Cuba Libre', price: 550, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Passion Juice (Glass)', price: 300, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Mango Juice (Glass)', price: 300, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Orange Juice (Glass)', price: 300, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Pineapple Juice (Glass)', price: 300, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Espresso', price: 250, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Cappuccino', price: 300, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Latte', price: 300, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Kenyan Tea', price: 200, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Herbal Tea', price: 250, stock: 100, category: 'Other', isFavorite: false, businessId },
+            { name: 'Hot Chocolate', price: 300, stock: 100, category: 'Other', isFavorite: false, businessId },
+        ];
+        
+        products.forEach(p => {
+            const prodRef = doc(collection(db, "products"));
+            batch.set(prodRef, p);
+        });
+        
+        await batch.commit();
+        console.log("Initial data setup complete.");
+    }
+
+    // --- UI & EVENT HANDLER LOGIC ---
+    
+    function showApp() {
+        loginScreen.style.display = 'none';
+        appDiv.classList.remove('hidden');
+        if (window.state.currentUser.role === 'admin') {
+            aiInsightsBar.classList.remove('hidden');
+        }
+    }
+
+    function hideApp() {
+        loginScreen.style.display = 'flex';
+        appDiv.classList.add('hidden');
+        aiInsightsBar.classList.add('hidden');
+    }
+
+    function showModal(title, content, onConfirm, showConfirm = true) {
+        modalTitle.textContent = title;
+        modalBody.innerHTML = content;
+        
+        modalFooter.innerHTML = `
+            <button id="modal-close-btn-dynamic" class="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-lg hover:bg-gray-500">Close</button>
+            <button id="modal-confirm-btn-dynamic" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Confirm</button>
+        `;
+        
+        const newConfirmBtn = document.getElementById('modal-confirm-btn-dynamic');
+        const newCloseBtn = document.getElementById('modal-close-btn-dynamic');
+
+        newConfirmBtn.classList.toggle('hidden', !showConfirm);
+        newConfirmBtn.onclick = () => { if(onConfirm()) { hideModal(); } };
+        newCloseBtn.onclick = hideModal;
+
+        modal.classList.remove('hidden');
+    }
+    function hideModal() { modal.classList.add('hidden'); }
+    
+    function renderAllUI() {
+        if (!window.state.currentUser) return;
+        
+        userInfo.textContent = `User: ${window.state.currentUser.name} (${window.state.currentUser.role})`;
+        businessNameHeader.textContent = window.state.settings.name || 'BarSoko POS';
+        updateOnlineStatus();
+
+        renderTabs();
+        renderDashboard();
+        renderOpenBills();
+        renderProductCategoriesNav();
+        renderProductsGrid(document.querySelector('.category-btn.active')?.dataset.category || 'Favorites');
+        renderCart();
+        renderShiftControls();
+        
+        renderProductListManagement();
+        renderCategoryManagement();
+        renderUserListManagement();
+        renderCustomerListManagement();
+        renderDiscountListManagement();
+        renderSalesHistory(true);
+        renderSalesHistory(false);
+        renderSettings();
+
+        const activeTabKey = tabsContainer.querySelector('button.active')?.dataset.tab;
+        if (activeTabKey && tabContents[activeTabKey]) {
+             tabContents[activeTabKey].classList.remove('hidden');
+        } else {
+            const firstTab = tabsContainer.querySelector('button');
+            if (firstTab) {
+                firstTab.classList.add('active');
+                tabContents[firstTab.dataset.tab].classList.remove('hidden');
+            }
+        }
+    }
+
+    function renderTabs() {
+        const activeTabKey = tabsContainer.querySelector('button.active')?.dataset.tab;
+
+        tabsContainer.innerHTML = '';
+        const allTabs = [
+            { key: 'dashboard', label: 'Dashboard', adminOnly: true },
+            { key: 'products', label: 'Products', adminOnly: false },
+            { key: 'my-sales', label: 'My Sales', adminOnly: false },
+            { key: 'all-sales', label: 'All Sales', adminOnly: true },
+            { key: 'reports', label: 'Reports', adminOnly: true },
+            { key: 'customers', label: 'Customers', adminOnly: true },
+            { key: 'waiters', label: 'Staff', adminOnly: true },
+            { key: 'categories', label: 'Categories', adminOnly: true },
+            { key: 'settings', label: 'Settings', adminOnly: false },
+        ];
+
+        const visibleTabs = allTabs.filter(tab => !tab.adminOnly || window.state.currentUser.role === 'admin');
+        visibleTabs.forEach((tab) => {
+            const button = document.createElement('button');
+            button.setAttribute('role', 'tab');
+            button.dataset.tab = tab.key;
+            button.className = `tab-btn`;
+            button.textContent = tab.label;
+            if (tab.key === activeTabKey) {
+                button.classList.add('active');
+            }
+            tabsContainer.appendChild(button);
+        });
+    }
+
+    function renderDashboard() {
+        if (window.state.currentUser.role !== 'admin' || !tabContents.dashboard) return;
+        
+        // Sales Chart
+        const salesCtx = document.getElementById('sales-chart').getContext('2d');
+        const last7Days = [...Array(7)].map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            return d.toISOString().slice(0, 10);
+        }).reverse();
+
+        const salesData = last7Days.map(date => {
+            return window.state.sales
+                .filter(s => s.date && new Date(s.date.seconds * 1000).toISOString().startsWith(date))
+                .reduce((sum, s) => sum + s.total, 0);
+        });
+
+        if (salesChartInstance) salesChartInstance.destroy();
+        salesChartInstance = new Chart(salesCtx, {
+            type: 'bar',
+            data: {
+                labels: last7Days.map(d => new Date(d).toLocaleDateString('en-us', { weekday: 'short' })),
+                datasets: [{
+                    label: 'Sales (Ksh)',
+                    data: salesData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+
+        // Category Chart
+        const categoryCtx = document.getElementById('category-chart').getContext('2d');
+        const salesByCategory = window.state.sales.flatMap(s => s.items).reduce((acc, item) => {
+            const product = window.state.products.find(p => p.id === item.productId);
+            if (product) {
+                const category = product.category || 'Uncategorized';
+                acc[category] = (acc[category] || 0) + (item.price * item.quantity);
+            }
+            return acc;
+        }, {});
+
+        if (categoryChartInstance) categoryChartInstance.destroy();
+        categoryChartInstance = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(salesByCategory),
+                datasets: [{
+                    label: 'Sales by Category',
+                    data: Object.values(salesByCategory),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)'
+                    ]
+                }]
+            }
+        });
+    }
+    
+    function renderOpenBills() {
+        const billsToShow = window.state.currentUser.role === 'admin'
+            ? window.state.openBills
+            : window.state.openBills.filter(b => b.waiterId === window.state.currentUser.id);
+
+        openBillsContainer.innerHTML = '';
+        const newBillButton = document.createElement('button');
+        newBillButton.className = 'border-2 border-dashed border-gray-600 rounded-lg p-4 text-center text-gray-400 hover:bg-gray-700 hover:border-gray-500 transition';
+        newBillButton.innerHTML = `<i class="fas fa-plus text-2xl"></i><p class="font-semibold mt-1">New Bill</p>`;
+        newBillButton.id = 'new-bill-btn';
+        openBillsContainer.appendChild(newBillButton);
+
+        billsToShow.forEach(bill => {
+            const billButton = document.createElement('button');
+            const isSelected = window.state.currentBillId === bill.id;
+            billButton.className = `border rounded-lg p-4 text-center cursor-pointer transition relative ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-700 border-gray-600 hover:border-blue-400'}`;
+            
+            const waiterNameHtml = window.state.currentUser.role === 'admin' ? `<p class="text-xs opacity-70">${bill.waiterName}</p>` : '';
+            const total = bill.items.reduce((t, i) => t + (i.price * i.quantity), 0);
+            
+            const billNameP = document.createElement('p');
+            billNameP.className = 'font-bold text-lg';
+            billNameP.textContent = bill.name;
+
+            billButton.innerHTML = `<span class="absolute top-1 right-1 text-xs bg-red-500 text-white font-semibold px-2 py-0.5 rounded-full">Unpaid</span>`;
+            billButton.appendChild(billNameP);
+            billButton.innerHTML += `<p class="text-sm">Ksh ${total.toFixed(2)}</p>${waiterNameHtml}`;
+            
+            billButton.dataset.billId = bill.id;
+            billButton.classList.add('open-bill-btn');
+            openBillsContainer.appendChild(billButton);
+        });
+    }
+
+    function renderProductCategoriesNav() {
+        const activeCategory = document.querySelector('.category-btn.active')?.dataset.category || 'Favorites';
+        const uniqueCategoryNames = [...new Set(window.state.categories.map(c => c.name))];
+        const categories = ['Favorites', 'All', ...uniqueCategoryNames];
+        productCategoriesNav.innerHTML = categories.map(cat => 
+            `<button data-category="${cat}" class="category-btn px-3 py-1 border rounded-full text-sm border-gray-600 ${cat === activeCategory ? 'active' : ''}">${cat === 'Favorites' ? '⭐ ' : ''}${cat}</button>`
+        ).join('');
+    }
+
+    function renderProductsGrid(category = 'Favorites', searchTerm = '') {
+        let productsToShow = window.state.products;
+
+        if (category === 'Favorites') {
+            productsToShow = productsToShow.filter(p => p.isFavorite);
+        } else if (category !== 'All') {
+            productsToShow = productsToShow.filter(p => p.category === category);
+        }
+
+        if (searchTerm) {
+            productsToShow = productsToShow.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
+
+        productGrid.innerHTML = '';
+        if (productsToShow.length === 0) {
+            productGrid.innerHTML = `<p class="text-gray-400 col-span-full">No products found.</p>`;
+            return;
+        }
+
+        productsToShow.forEach(p => {
+            let cardClass = 'product-card border rounded-lg p-4 text-center cursor-pointer transition border-gray-700 bg-gray-800';
+            if (p.stock <= 0) {
+                cardClass += ' opacity-50 cursor-not-allowed out-of-stock';
+            } else if (p.stock <= 10) {
+                cardClass += ' low-stock';
+            } else {
+                cardClass += ' hover:bg-gray-700 hover:border-blue-500';
+            }
+            
+            const stockInfo = p.stock <= 0 ? '<span class="text-red-500 font-bold">Out of Stock</span>' : `<span class="text-gray-400">${p.stock} in stock</span>`;
+            
+            const productCard = document.createElement('div');
+            productCard.className = cardClass;
+            productCard.setAttribute('role', 'gridcell');
+            productCard.setAttribute('tabindex', p.stock > 0 ? '0' : '-1');
+            
+            const nameH4 = document.createElement('h4');
+            nameH4.className = 'font-semibold text-gray-100';
+            nameH4.textContent = p.name;
+            
+            productCard.appendChild(nameH4);
+            productCard.innerHTML += `<p class="text-lg font-bold text-blue-400">Ksh ${p.price.toFixed(2)}</p><p class="text-xs">${stockInfo}</p>`;
+            
+            if (p.stock > 0) {
+                productCard.dataset.productId = p.id;
+            }
+            productGrid.appendChild(productCard);
+
+        });
+    }
+    
+    function renderCart() {
+        cartDiv.innerHTML = '';
+        const subtotal = window.state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        const discountPercentage = window.state.cart.discount ? window.state.cart.discount.percentage : 0;
+        const discountValue = (subtotal * discountPercentage) / 100;
+        const total = subtotal - discountValue;
+
+        const enableBtns = subtotal > 0;
+
+        if (window.state.cart.length === 0) {
+            cartDiv.innerHTML = `<p class="text-gray-400">Your cart is empty.</p>`;
+        } else {
+            window.state.cart.forEach(item => {
+                const cartItemDiv = document.createElement('div');
+                cartItemDiv.className = 'flex justify-between items-center bg-gray-700 p-2 rounded-md';
+                
+                const nameP = document.createElement('p');
+                nameP.className = 'font-medium';
+                nameP.textContent = item.name;
+
+                cartItemDiv.innerHTML = `<div></div><div class="flex items-center space-x-3">
+                    <button data-id="${item.productId}" data-action="decrease-qty" aria-label="Decrease quantity of ${item.name}" class="bg-gray-600 w-6 h-6 rounded-full">-</button>
+                    <span class="font-bold">${item.quantity}</span>
+                    <button data-id="${item.productId}" data-action="increase-qty" aria-label="Increase quantity of ${item.name}" class="bg-gray-600 w-6 h-6 rounded-full">+</button>
+                </div>`;
+                cartItemDiv.firstChild.appendChild(nameP);
+                cartItemDiv.firstChild.innerHTML += `<p class="text-sm text-gray-400">Ksh ${item.price.toFixed(2)}</p>`;
+                
+                cartDiv.appendChild(cartItemDiv);
+            });
+        }
+        
+        cartSubtotalSpan.textContent = `Ksh ${subtotal.toFixed(2)}`;
+        if (discountValue > 0) {
+            discountAmountSpan.textContent = `- Ksh ${discountValue.toFixed(2)} (${discountPercentage}%)`;
+            discountDisplay.classList.remove('hidden');
+        } else {
+            discountDisplay.classList.add('hidden');
+        }
+        cartTotalSpan.textContent = `Ksh ${total.toFixed(2)}`;
+        
+        payCashBtn.disabled = !enableBtns;
+        payMpesaBtn.disabled = !enableBtns;
+        payCardBtn.disabled = !enableBtns;
+        saveBillBtn.disabled = !enableBtns;
+        applyDiscountBtn.disabled = !enableBtns;
+        clearCartBtn.disabled = !(window.state.cart.length > 0 || window.state.currentBillId);
+        printBillBtn.disabled = !window.state.currentBillId;
+    }
+
+    function renderShiftControls() {
+        const myShift = window.state.shifts.find(s => s.waiterId === window.state.currentUser.id && !s.end);
+        const shiftStatus = myShift ? `Shift Active since ${new Date(myShift.start).toLocaleTimeString()}` : 'No active shift.';
+        const shiftButton = myShift
+            ? `<button data-action="end-shift" class="w-full bg-red-600 text-white py-2 rounded-lg">End Shift</button>`
+            : `<button data-action="start-shift" class="w-full bg-green-600 text-white py-2 rounded-lg">Start Shift</button>`;
+        shiftManagementPanel.innerHTML = `<h3 class="font-semibold text-blue-300">Shift Management</h3><p class="text-sm text-blue-400 mb-2">${shiftStatus}</p>${shiftButton}`;
+    }
+
+    function renderProductListManagement() {
+        const isAdmin = window.state.currentUser.role === 'admin';
+
+        const addProductForm = document.getElementById('add-product-form');
+        if (addProductForm) {
+            addProductForm.style.display = isAdmin ? 'block' : 'none';
+            addProductForm.nextElementSibling.style.display = isAdmin ? 'block' : 'none';
+        }
+
+        const productCategorySelect = document.getElementById('product-category');
+        if (productCategorySelect) {
+            const uniqueCategories = [...new Set(window.state.categories.map(c => c.name))];
+            const categoryOptions = uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+            productCategorySelect.innerHTML = categoryOptions;
+        }
+        
+        productListManagement.innerHTML = window.state.products.map(p => {
+            const adminButtons = isAdmin ? `
+                <div class="flex items-center space-x-3">
+                    <button data-id="${p.id}" data-action="toggle-favorite" aria-label="Toggle Favorite for ${p.name}" class="text-gray-400 hover:text-yellow-500"><i class="${p.isFavorite ? 'fas' : 'far'} fa-star"></i></button>
+                    <button data-id="${p.id}" data-action="edit-product" aria-label="Edit ${p.name}" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                    <button data-id="${p.id}" data-action="delete-product" aria-label="Delete ${p.name}" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                </div>` : '';
+
+            return `
+            <div class="flex justify-between items-center bg-gray-700 p-2 rounded-md">
+                <div>
+                    <p class="font-medium">${p.name}</p>
+                    <p class="text-sm text-gray-400">Ksh ${p.price.toFixed(2)} - Stock: ${p.stock} - Cat: ${p.category}</p>
+                </div>
+                ${adminButtons}
+            </div>`;
+        }).join('') || `<p class="text-gray-400 text-sm">No products added yet.</p>`;
+    }
+    
+    function renderCategoryManagement() {
+         if (window.state.currentUser.role !== 'admin') return;
+         
+         const categoryMap = new Map();
+         window.state.categories.forEach(cat => {
+            if (!categoryMap.has(cat.name)) {
+                categoryMap.set(cat.name, cat);
+            }
+         });
+         const uniqueCategories = Array.from(categoryMap.values());
+
+         categoryListManagement.innerHTML = uniqueCategories.map(cat => `
+             <div class="flex justify-between items-center bg-gray-700 p-2 rounded-md">
+                  <p class="font-medium">${cat.name}</p>
+                  <div class="flex items-center space-x-3">
+                       <button data-id="${cat.id}" data-name="${cat.name}" data-action="edit-category" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                       <button data-id="${cat.id}" data-name="${cat.name}" data-action="delete-category" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                  </div>
+             </div>`
+         ).join('') || `<p class="text-gray-400 text-sm">No categories added yet.</p>`;
+    }
+
+    function renderUserListManagement() {
+        const isAdmin = window.state.currentUser.role === 'admin';
+
+        const addUserBtn = document.getElementById('add-user-btn');
+        if (addUserBtn) {
+            addUserBtn.style.display = isAdmin ? 'block' : 'none';
+        }
+
+        if (!isAdmin) {
+            userListManagement.innerHTML = '<p class="text-gray-400">Staff management is for admins only.</p>';
+            return;
+        }
+
+        const activeUsers = window.state.users.filter(u => !u.isDeleted);
+        const deletedUsers = window.state.users.filter(u => u.isDeleted);
+
+        let html = '<h3 class="font-semibold text-gray-200 mb-2">Active Staff</h3>';
+        html += activeUsers.map(u => {
+            const roleBadge = `<span class="text-xs ${u.role === 'admin' ? 'bg-blue-200 text-blue-800' : 'bg-gray-500 text-gray-100'} font-semibold px-2 py-0.5 rounded-full">${u.role}</span>`;
+            
+            let deactivationHtml = '';
+            let softDeleteButtonHtml = '';
+
+            if (u.role === 'waiter') {
+                if (u.deactivationRequested) {
+                    deactivationHtml = `<span class="text-xs bg-yellow-200 text-yellow-800 font-semibold px-2 py-0.5 rounded-full ml-2">Deactivation Requested</span>`;
+                    softDeleteButtonHtml = `<button data-id="${u.id}" data-name="${u.name}" data-action="soft-delete-user" aria-label="Confirm Deactivation for ${u.name}" class="text-green-500 hover:text-green-400"><i class="fas fa-check"></i> Confirm</button>`;
+                } else {
+                    softDeleteButtonHtml = `<button data-id="${u.id}" data-name="${u.name}" data-action="soft-delete-user" aria-label="Deactivate ${u.name}" class="text-red-500 hover:text-red-700"><i class="fas fa-user-slash"></i></button>`;
+                }
+            }
+
+            const waiterActions = u.role === 'waiter' ? `
+                <button data-id="${u.id}" data-name="${u.name}" data-action="reset-password" aria-label="Reset Password for ${u.name}" class="text-yellow-500 hover:text-yellow-400"><i class="fas fa-key"></i></button>
+                ${softDeleteButtonHtml}
+            ` : '';
+
+            return `<div class="flex justify-between items-center bg-gray-700 p-2 rounded-md">
+                <div><p class="font-medium">${u.name} ${roleBadge}${deactivationHtml}</p><p class="text-xs text-gray-400">${u.email || 'N/A'}</p></div>
+                <div class="flex items-center space-x-3">${waiterActions}</div>
+            </div>`;
+        }).join('');
+
+        if (deletedUsers.length > 0) {
+            html += `<hr class="my-4 border-gray-600"><h3 class="font-semibold text-gray-400 mb-2">Deactivated Staff</h3>`;
+            html += deletedUsers.map(u => `
+                <div class="flex justify-between items-center bg-gray-800 p-2 rounded-md opacity-60">
+                    <div><p class="font-medium italic">${u.name}</p></div>
+                    <div class="flex items-center space-x-3">
+                        <button data-id="${u.id}" data-action="restore-user" aria-label="Restore ${u.name}" class="text-green-500 hover:text-green-400"><i class="fas fa-undo"></i> Restore</button>
+                        <button data-id="${u.id}" data-name="${u.name}" data-action="permanent-delete-user" aria-label="Permanently Delete ${u.name}" class="text-red-700 hover:text-red-900"><i class="fas fa-fire"></i></button>
+                    </div>
+                </div>`
+            ).join('');
+        }
+
+        userListManagement.innerHTML = html;
+    }
+
+    function renderCustomerListManagement() {
+        if (window.state.currentUser.role !== 'admin') return;
+
+        customerListManagement.innerHTML = window.state.customers.map(c => `
+            <div class="flex justify-between items-center bg-gray-700 p-2 rounded-md">
+                <div>
+                    <p class="font-medium">${c.name}</p>
+                    <p class="text-sm text-gray-400">${c.phone || 'No phone'}</p>
+                </div>
+                <button data-id="${c.id}" data-action="edit-customer" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+            </div>
+        `).join('') || `<p class="text-gray-400 text-sm">No customers added yet.</p>`;
+    }
+    
+    function renderDiscountListManagement() {
+        if (window.state.currentUser.role !== 'admin') return;
+
+        discountListManagement.innerHTML = window.state.discounts.map(d => `
+            <div class="flex justify-between items-center bg-gray-700 p-2 rounded-md">
+                <div>
+                    <p class="font-medium">${d.name} (${d.percentage}%)</p>
+                </div>
+                <button data-id="${d.id}" data-action="delete-discount" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+            </div>
+        `).join('') || `<p class="text-gray-400 text-sm">No discounts added yet.</p>`;
+    }
+
+
+    function renderSalesHistory(forAllUsers) {
+        const targetList = forAllUsers ? tabContents['all-sales'] : tabContents['my-sales'];
+        if (!targetList) return;
+        if (forAllUsers && window.state.currentUser.role !== 'admin') {
+            targetList.innerHTML = '<p class="text-gray-400">Access denied.</p>';
+            return;
+        }
+
+        const salesToShow = forAllUsers 
+            ? window.state.sales 
+            : window.state.sales.filter(s => s.waiterId === window.state.currentUser.id);
+        
+        if (salesToShow.length === 0) {
+            targetList.innerHTML = `<p class="text-gray-400 text-sm">No sales recorded yet.</p>`;
+            return;
+        }
+
+        const reversedSales = [...salesToShow].sort((a,b) => b.date.seconds - a.date.seconds);
+        targetList.innerHTML = reversedSales.map(sale => {
+            const itemsHtml = sale.items.map(item => `<li>${item.quantity} x ${item.name}</li>`).join('');
+            const transactionCode = sale.transactionCode ? `<p class="text-xs text-gray-400">${sale.paymentMethod}: ${sale.transactionCode}</p>` : '';
+            let paymentMethodClass = 'bg-green-500';
+            if (sale.paymentMethod === 'M-PESA') paymentMethodClass = 'bg-emerald-500';
+            if (sale.paymentMethod === 'Card') paymentMethodClass = 'bg-blue-500';
+
+            return `<div class="bg-gray-700 p-3 rounded-md border border-gray-600">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-bold">${sale.waiterName}</p>
+                        <p class="text-sm text-gray-400">${new Date(sale.date.seconds * 1000).toLocaleString()}</p>
+                        ${transactionCode}
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold text-lg text-green-400">Ksh ${sale.total.toFixed(2)}</p>
+                        <p class="text-xs font-medium text-white px-2 py-1 rounded-full ${paymentMethodClass}">${sale.paymentMethod}</p>
+                    </div>
+                </div>
+                <ul class="text-sm list-disc list-inside mt-2 text-gray-300">${itemsHtml}</ul>
+            </div>`;
+        }).join('');
+    }
+    
+    function renderSettings() {
+        const isAdmin = window.state.currentUser.role === 'admin';
+        document.getElementById('business-settings-section').style.display = isAdmin ? 'block' : 'none';
+        document.getElementById('data-management-section').style.display = isAdmin ? 'block' : 'none';
+
+        if (isAdmin) {
+            document.getElementById('business-name').value = window.state.settings.name || '';
+            document.getElementById('mpesa-till').value = window.state.settings.mpesaTill || '';
+            document.querySelector('#business-id-display p').textContent = window.state.currentUser.businessId;
+        }
+        
+        const securitySection = document.getElementById('security-settings-section');
+        let requestBtn = document.getElementById('request-deactivation-btn');
+        if (window.state.currentUser.role === 'waiter') {
+            if (!requestBtn) {
+                requestBtn = document.createElement('button');
+                requestBtn.id = 'request-deactivation-btn';
+                requestBtn.className = 'w-full bg-yellow-700 text-white py-2 rounded-lg shadow hover:bg-yellow-800 transition mt-4';
+                requestBtn.textContent = 'Request Account Deactivation';
+                securitySection.appendChild(requestBtn);
+            }
+        } else {
+            if (requestBtn) {
+                requestBtn.remove();
+            }
+        }
+
+        // Update subscription UI
+        const status = window.state.settings.subscriptionStatus || 'trial';
+        const endDate = window.state.settings.subscriptionEndDate ? window.state.settings.subscriptionEndDate.toDate() : new Date();
+        
+        let statusText = 'Unknown';
+        subscriptionStatusDisplay.className = 'text-lg font-semibold';
+
+        switch(status) {
+            case 'trial':
+                statusText = `Trial Period (Ends ${endDate.toLocaleDateString()})`;
+                subscriptionStatusDisplay.classList.add('text-yellow-400');
+                break;
+            case 'active':
+                statusText = `Active (Renews ${endDate.toLocaleDateString()})`;
+                subscriptionStatusDisplay.classList.add('text-green-400');
+                break;
+            case 'expired':
+                statusText = `Expired on ${endDate.toLocaleDateString()}`;
+                subscriptionStatusDisplay.classList.add('text-red-400');
+                break;
+        }
+        subscriptionStatusDisplay.textContent = statusText;
+    }
+
+    function updateOnlineStatus() {
+        const online = navigator.onLine;
+        let statusHtml = `<div class="w-3 h-3 ${online ? 'bg-green-500' : 'bg-red-500'} rounded-full animate-pulse"></div><span class="text-sm font-medium text-gray-400">${online ? 'Online' : 'Offline'}</span>`;
+        
+        const pendingCount = window.state.pendingSales.length;
+        if (pendingCount > 0) {
+            statusHtml += `<span class="ml-3 text-xs font-semibold bg-yellow-500 text-yellow-900 px-2 py-1 rounded-full">${pendingCount} Pending</span>`;
+        }
+        
+        onlineStatusIndicator.innerHTML = statusHtml;
+    }
+    
+    function generateReceiptHtml(bill, isCopy = false) {
+        if (!bill) return '';
+        const subtotal = bill.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const discountPercentage = bill.discount ? bill.discount.percentage : 0;
+        const discountValue = (subtotal * discountPercentage) / 100;
+        const total = subtotal - discountValue;
+
+        const copyText = isCopy ? `<p style="text-align: center; font-weight: bold; margin: 10px 0;">*** COPY ***</p>` : '';
+        return `
+            <div style="font-family: 'Courier New', monospace; width: 280px; font-size: 12px; color: #000;">
+                <h2 style="text-align: center; font-size: 16px; margin: 0 0 10px 0;">${window.state.settings.name}</h2>
+                <p style="text-align: center; margin: 0;">Bill for: ${bill.name}</p>
+                <p style="text-align: center; margin: 0;">Served by: ${bill.waiterName}</p>
+                <p style="text-align: center; margin: 0; font-size: 10px;">${new Date().toLocaleString('en-GB')}</p>
+                ${copyText}
+                <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 2px;">Item</th>
+                            <th style="text-align: center; padding: 2px;">Qty</th>
+                            <th style="text-align: right; padding: 2px;">Price</th>
+                            <th style="text-align: right; padding: 2px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${bill.items.map(item => `
+                            <tr>
+                                <td style="padding: 2px; max-width: 140px; word-wrap: break-word;">${item.name}</td>
+                                <td style="text-align: center; padding: 2px;">${item.quantity}</td>
+                                <td style="text-align: right; padding: 2px;">${item.price.toFixed(0)}</td>
+                                <td style="text-align: right; padding: 2px;">${(item.price * item.quantity).toFixed(0)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
+                <div style="text-align: right; font-size: 14px;">
+                    <p style="margin: 0;">Subtotal: Ksh ${subtotal.toFixed(2)}</p>
+                    ${discountValue > 0 ? `<p style="margin: 0;">Discount: -Ksh ${discountValue.toFixed(2)}</p>` : ''}
+                </div>
+                <div style="text-align: right; font-size: 16px; font-weight: bold; margin-top: 5px;">
+                    <p style="margin: 0;">TOTAL: Ksh ${total.toFixed(2)}</p>
+                </div>
+                <p style="text-align: center; margin-top: 20px; font-size: 10px;">Thank you for your business!</p>
+                <p style="text-align: center; margin: 0; font-size: 10px;">M-PESA Till: ${window.state.settings.mpesaTill || 'N/A'}</p>
+            </div>
+        `;
+    }
+    
+    async function populateWaiterSelectForBusiness(businessId) {
+        const waiterUsernameSelect = document.getElementById('waiter-username');
+        waiterUsernameSelect.innerHTML = '<option value="">Loading...</option>';
+        waiterUsernameSelect.disabled = true;
+
+        if (!businessId) {
+            waiterUsernameSelect.innerHTML = '<option value="">Enter Business ID first</option>';
+            return;
+        }
+
+        try {
+            const q = query(collection(db, "users"), where("businessId", "==", businessId), where("role", "==", "waiter"), where("isDeleted", "==", false));
+            const querySnapshot = await getDocs(q);
+            const waiters = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            if (waiters.length > 0) {
+                waiterUsernameSelect.innerHTML = '<option value="">Select your name</option>';
+                waiters.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.name;
+                    waiterUsernameSelect.appendChild(option);
+                });
+                waiterUsernameSelect.disabled = false;
+            } else {
+                waiterUsernameSelect.innerHTML = '<option value="">No waiters found for this ID</option>';
+            }
+        } catch (error) {
+            console.error("Error fetching waiters:", error);
+            waiterUsernameSelect.innerHTML = '<option value="">Error loading staff</option>';
+        }
+    }
+
+    let appEventListenersSetup = false;
+    function setupAppEventListeners(auth, db) {
+        if (appEventListenersSetup) return;
+        console.log("Setting up main application event listeners...");
+
+        openBillsContainer.addEventListener('click', e => {
+            const newBillBtn = e.target.closest('#new-bill-btn');
+            const openBillBtn = e.target.closest('.open-bill-btn');
+
+            if (newBillBtn) {
+                handleNewBill(db);
+            } else if (openBillBtn) {
+                const billId = openBillBtn.dataset.billId;
+                handleOpenBill(billId);
+            }
+        });
+
+        productGrid.addEventListener('click', e => {
+            const card = e.target.closest('.product-card');
+            if (card && card.dataset.productId) {
+                handleAddToCart(card.dataset.productId);
+            }
+        });
+
+        document.getElementById('product-search').addEventListener('input', e => {
+            const searchTerm = e.target.value;
+            const activeCategory = document.querySelector('.category-btn.active')?.dataset.category || 'Favorites';
+            renderProductsGrid(activeCategory, searchTerm);
+        });
+
+        productCategoriesNav.addEventListener('click', e => {
+            const target = e.target.closest('button');
+            if (target) {
+                productCategoriesNav.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                target.classList.add('active');
+                renderProductsGrid(target.dataset.category, document.getElementById('product-search').value);
+            }
+        });
+        
+        cartDiv.addEventListener('click', e => {
+            const target = e.target.closest('button');
+            if (!target) return;
+            const productId = target.dataset.id;
+            const action = target.dataset.action;
+            if (action === 'increase-qty') handleUpdateQuantity(productId, 1);
+            if (action === 'decrease-qty') handleUpdateQuantity(productId, -1);
+        });
+
+        saveBillBtn.addEventListener('click', () => handleSaveToBill(db));
+        clearCartBtn.addEventListener('click', () => handleClearCart(db));
+        applyDiscountBtn.addEventListener('click', () => handleApplyDiscount());
+        
+        payCashBtn.addEventListener('click', () => handlePreSaleShiftCheck(db, () => handleProcessSale(db, 'Cash')));
+        payMpesaBtn.addEventListener('click', () => handlePreSaleShiftCheck(db, () => promptMpesaPayment(db)));
+        payCardBtn.addEventListener('click', () => handlePreSaleShiftCheck(db, () => promptCardPayment(db)));
+        
+        printBillBtn.addEventListener('click', handlePrintBill);
+        printPreviewModal.addEventListener('click', e => {
+            const target = e.target.closest('button');
+            if(!target) return;
+            if(target.id === 'print-preview-close') printPreviewModal.classList.add('hidden');
+            if(target.id === 'print-preview-final') {
+                 const bill = window.state.openBills.find(b => b.id === window.state.currentBillId);
+                 if (!bill) return;
+                 printArea.innerHTML = generateReceiptHtml(bill, false);
+                 window.print();
+                 printPreviewModal.classList.add('hidden');
+            }
+            if(target.id === 'print-preview-copy') {
+                const bill = window.state.openBills.find(b => b.id === window.state.currentBillId);
+                 if (!bill) return;
+                 printArea.innerHTML = generateReceiptHtml(bill, true);
+                 window.print();
+            }
+        });
+
+        shiftManagementPanel.addEventListener('click', e => {
+            const target = e.target.closest('button');
+            if (!target) return;
+            const action = target.dataset.action;
+            if (action === 'start-shift') handleStartShift(db);
+            if (action === 'end-shift') handleEndShift(db);
+        });
+
+        tabsContainer.addEventListener('click', e => {
+            const clickedTab = e.target.closest('button');
+            if (!clickedTab) return;
+            
+
+            tabsContainer.querySelectorAll('button').forEach(tab => tab.classList.remove('active'));
+            clickedTab.classList.add('active');
+
+            Object.values(tabContents).forEach(content => content.classList.add('hidden'));
+            const contentId = clickedTab.dataset.tab;
+            if (tabContents[contentId]) {
+                tabContents[contentId].classList.remove('hidden');
+            }
+        });
+        
+        document.getElementById('add-product-form').addEventListener('submit', (e) => handleAddProduct(e, db));
+        document.getElementById('add-category-form').addEventListener('submit', (e) => handleAddCategory(e, db));
+        document.getElementById('add-user-btn').addEventListener('click', () => handleAddUser(db));
+        document.getElementById('add-customer-btn').addEventListener('click', () => handleAddCustomer(db));
+        document.getElementById('add-discount-form').addEventListener('submit', (e) => handleAddDiscount(e, db));
+
+        productListManagement.addEventListener('click', e => {
+            const button = e.target.closest('button');
+            if(!button) return;
+            const id = button.dataset.id;
+            const action = button.dataset.action;
+            if (action === 'edit-product') {
+                const product = window.state.products.find(p => p.id === id);
+                promptEditProduct(db, product);
+            }
+            if (action === 'delete-product') {
+                showModal('Confirm Deletion', 'Are you sure you want to delete this product?', () => {
+                    deleteDoc(doc(db, "products", id));
+                    return true;
+                });
+            }
+            if (action === 'toggle-favorite') {
+                const product = window.state.products.find(p => p.id === id);
+                updateDoc(doc(db, "products", id), { isFavorite: !product.isFavorite });
+            }
+        });
+        
+        categoryListManagement.addEventListener('click', e => {
+            const button = e.target.closest('button');
+            if(!button) return;
+            const id = button.dataset.id;
+            const name = button.dataset.name;
+            const action = button.dataset.action;
+            if (action === 'edit-category') promptEditCategory(db, {id, name});
+            if (action === 'delete-category') handleDeleteCategory(db, {id, name});
+        });
+
+        customerListManagement.addEventListener('click', e => {
+            const button = e.target.closest('button');
+            if(!button) return;
+            const id = button.dataset.id;
+            const action = button.dataset.action;
+            if (action === 'edit-customer') {
+                const customer = window.state.customers.find(c => c.id === id);
+                promptEditCustomer(db, customer);
+            }
+        });
+
+        discountListManagement.addEventListener('click', e => {
+            const button = e.target.closest('button');
+            if(!button) return;
+            const id = button.dataset.id;
+            const action = button.dataset.action;
+            if (action === 'delete-discount') {
+                showModal('Confirm Deletion', 'Are you sure you want to delete this discount?', () => {
+                    deleteDoc(doc(db, "discounts", id));
+                    return true;
+                });
+            }
+        });
+
+        userListManagement.addEventListener('click', e => {
+            const button = e.target.closest('button');
+            if(!button) return;
+            const userId = button.dataset.id;
+            const userName = button.dataset.name;
+            const action = button.dataset.action;
+
+            if (action === 'soft-delete-user') {
+                handleSoftDeleteUser(db, userId, userName);
+            }
+            if (action === 'restore-user') {
+                handleRestoreUser(db, userId);
+            }
+            if (action === 'reset-password') {
+                promptResetPassword(db, userId, userName);
+            }
+            if (action === 'permanent-delete-user') {
+                handlePermanentDeleteUser(db, userId, userName);
+            }
+        });
+
+        // Report Section Event Listeners
+        document.querySelector('#tab-content-reports').addEventListener('click', e => {
+            const target = e.target.closest('button');
+            if (!target) return;
+            
+            if (target.id === 'generate-report-btn') handleGenerateReport();
+            if (target.dataset.range === 'daily') handleGenerateReport('daily');
+            if (target.dataset.range === '90days') handleGenerateReport('90days');
+            if (target.id === 'download-summary-btn') handleDownloadReport('summary');
+            if (target.id === 'download-full-btn') handleDownloadReport('full');
+            if (target.id === 'print-report-btn') handlePrintReport();
+        });
+
+
+        document.getElementById('save-settings-btn').addEventListener('click', () => handleSaveSettings(db));
+        document.getElementById('change-my-password-btn').addEventListener('click', () => promptChangePassword(auth));
+        document.getElementById('clear-transactions-btn').addEventListener('click', () => promptClearTransactions(db));
+        
+        document.getElementById('tab-content-settings').addEventListener('click', e => {
+            if(e.target.id === 'request-deactivation-btn') {
+                handleRequestDeactivation(db);
+            }
+        });
+
+        window.addEventListener('online', () => {
+            updateOnlineStatus();
+            syncPendingSales(db);
+        });
+        window.addEventListener('offline', updateOnlineStatus);
+        
+        monthlyPlanBtn.addEventListener('click', () => {
+            paymentFormContainer.classList.remove('hidden');
+        });
+
+        yearlyPlanBtn.addEventListener('click', () => {
+            paymentFormContainer.classList.remove('hidden');
+        });
+
+        payNowBtn.addEventListener('click', () => handleSubscriptionPayment(db));
+
+        appEventListenersSetup = true;
+        console.log("Application event listeners are now active.");
+    }
+    
+    function handleNewBill(db) {
+        const content = `<div><label for="bill-name" class="block text-sm font-medium text-gray-300">Enter Table Number or Customer Name</label><input type="text" id="bill-name" class="mt-1 block w-full border p-2 bg-gray-700 border-gray-600 rounded-md" placeholder="e.g., Table 5" required></div>`;
+        showModal('Create New Bill', content, async () => {
+            const name = document.getElementById('bill-name').value.trim();
+            if (name) {
+                const newBill = {
+                    name: name,
+                    items: [],
+                    waiterId: window.state.currentUser.id,
+                    waiterName: window.state.currentUser.name,
+                    createdAt: serverTimestamp(),
+                    businessId: window.state.currentUser.businessId
+                };
+                const docRef = await addDoc(collection(db, "openBills"), newBill);
+                handleOpenBill(docRef.id);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    function handleOpenBill(billId) {
+        const bill = window.state.openBills.find(b => b.id === billId);
+        if (!bill) return;
+
+        window.state.currentBillId = billId;
+        window.state.cart = JSON.parse(JSON.stringify(bill.items));
+        currentBillInfo.textContent = `Bill: ${bill.name}`;
+        renderCart();
+        renderOpenBills();
+    }
+    
+    function handleAddToCart(productId) {
+        if (!window.state.currentBillId) {
+            showModal('Action Required', 'Please create a new bill or select an existing one before adding items.', () => true, false);
+            return;
+        }
+        const product = window.state.products.find(p => p.id === productId);
+        if (!product || product.stock <= 0) return;
+
+        const cartItem = window.state.cart.find(item => item.productId === productId);
+        if (cartItem) {
+            if (product.stock > cartItem.quantity) {
+                cartItem.quantity++;
+            } else {
+                showModal('Out of Stock', 'No more stock available for this item.', () => true, false);
+            }
+        } else {
+            window.state.cart.push({ productId: product.id, name: product.name, price: product.price, quantity: 1 });
+        }
+        renderCart();
+    }
+
+    function handleUpdateQuantity(productId, change) {
+        const cartItem = window.state.cart.find(item => item.productId === productId);
+        if (!cartItem) return;
+        const product = window.state.products.find(p => p.id === productId);
+        
+        if (change > 0) {
+            if (product.stock > cartItem.quantity) {
+                cartItem.quantity += change;
+            } else {
+                showModal('Out of Stock', 'No more stock available for this item.', () => true, false);
+            }
+        } else {
+            cartItem.quantity += change;
+        }
+        
+        if (cartItem.quantity <= 0) {
+            window.state.cart = window.state.cart.filter(item => item.productId !== productId);
+        }
+        renderCart();
+    }
+
+    async function handleSaveToBill(db) {
+        if (!window.state.currentBillId || window.state.cart.length === 0) return;
+        
+        const billRef = doc(db, "openBills", window.state.currentBillId);
+        await updateDoc(billRef, { items: window.state.cart });
+
+        window.state.cart = [];
+        window.state.currentBillId = null;
+        currentBillInfo.textContent = '';
+        renderCart();
+        renderOpenBills();
+    }
+
+    async function handleClearCart(db) {
+        if(window.state.currentBillId) {
+            await deleteDoc(doc(db, "openBills", window.state.currentBillId));
+        }
+        window.state.cart = [];
+        window.state.currentBillId = null;
+        currentBillInfo.textContent = '';
+        renderCart();
+        renderOpenBills();
+    }
+
+    async function handleStartShift(db) {
+        const waiterId = window.state.currentUser.id;
+        const myActiveShift = window.state.shifts.find(s => s.waiterId === waiterId && !s.end);
+        if (myActiveShift) {
+            showModal('Shift Active', 'A shift is already active.', () => true, false);
+            return;
+        }
+        const newShift = {
+            waiterId: waiterId,
+            waiterName: window.state.currentUser.name,
+            start: new Date().toISOString(),
+            end: null,
+            sales: [],
+            businessId: window.state.currentUser.businessId
+        };
+        await addDoc(collection(db, "shifts"), newShift);
+    }
+
+    async function handleEndShift(db) {
+        const waiterId = window.state.currentUser.id;
+        const myActiveShift = window.state.shifts.find(s => s.waiterId === waiterId && !s.end);
+        if (!myActiveShift) {
+            showModal('No Active Shift', 'There is no active shift to end.', () => true, false);
+            return;
+        }
+        
+        const shiftRef = doc(db, "shifts", myActiveShift.id);
+        await updateDoc(shiftRef, { end: new Date().toISOString() });
+        
+        const totalSales = myActiveShift.sales.reduce((t, s) => t + s.total, 0);
+        showModal('Shift Ended', `<p>Shift ended successfully.</p><p>Total Sales This Shift: Ksh ${totalSales.toFixed(2)}</p>`, () => true, false);
+    }
+
+    function handlePreSaleShiftCheck(db, callback) {
+        const waiterId = window.state.currentUser.id;
+        const myActiveShift = window.state.shifts.find(s => s.waiterId === waiterId && !s.end);
+        if (!myActiveShift) {
+            showModal('Start Shift?', 'You must start a shift to record sales. Start a shift now?', async () => {
+                await handleStartShift(db);
+                callback();
+                return true;
+            });
+        } else {
+            callback();
+        }
+    }
+
+    async function handleProcessSale(db, paymentMethod, transactionCode = '') {
+        if (window.state.cart.length === 0) return;
+
+        const subtotal = window.state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const discountPercentage = window.state.cart.discount ? window.state.cart.discount.percentage : 0;
+        const discountValue = (subtotal * discountPercentage) / 100;
+        const total = subtotal - discountValue;
+
+        const waiterId = window.state.currentUser.id;
+        const myActiveShift = window.state.shifts.find(s => s.waiterId === waiterId && !s.end);
+
+        const sale = {
+            items: window.state.cart,
+            subtotal,
+            discount: window.state.cart.discount || null,
+            total,
+            paymentMethod: paymentMethod,
+            transactionCode: transactionCode,
+            date: serverTimestamp(),
+            waiterId: waiterId,
+            waiterName: window.state.currentUser.name,
+            shiftId: myActiveShift ? myActiveShift.id : 'N/A',
+            businessId: window.state.currentUser.businessId,
+            originalBillId: window.state.currentBillId,
+            offlineTimestamp: new Date().toISOString()
+        };
+
+        if (!navigator.onLine) {
+            console.log("App is offline. Queuing sale.");
+            window.state.pendingSales.push(sale);
+            savePendingSalesToLocal();
+            
+            sale.items.forEach(cartItem => {
+                const product = window.state.products.find(p => p.id === cartItem.productId);
+                if (product) {
+                    product.stock -= cartItem.quantity;
+                }
+            });
+            
+            if (window.state.currentBillId) {
+                window.state.openBills = window.state.openBills.filter(b => b.id !== window.state.currentBillId);
+            }
+            
+        } else {
+            console.log("App is online. Processing sale directly.");
+            const batch = writeBatch(db);
+
+            window.state.cart.forEach(cartItem => {
+                const productRef = doc(db, "products", cartItem.productId);
+                const product = window.state.products.find(p => p.id === cartItem.productId);
+                if (product) {
+                    const newStock = Math.max(0, product.stock - cartItem.quantity);
+                    batch.update(productRef, { stock: newStock });
+                }
+            });
+
+            const saleRef = doc(collection(db, "sales"));
+            batch.set(saleRef, sale);
+            
+            if (myActiveShift) {
+                const shiftRef = doc(db, "shifts", myActiveShift.id);
+                const updatedSales = [...myActiveShift.sales, {id: saleRef.id, total: sale.total}];
+                batch.update(shiftRef, { sales: updatedSales });
+            }
+
+            if (window.state.currentBillId) {
+                const billRef = doc(db, "openBills", window.state.currentBillId);
+                batch.delete(billRef);
+            }
+
+            try {
+                await batch.commit();
+            } catch (error) {
+                console.error("Online sale processing failed:", error);
+                window.state.pendingSales.push(sale);
+                savePendingSalesToLocal();
+                showModal('Network Error', 'Could not complete sale. It has been saved and will be retried automatically.', () => true, false);
+            }
+        }
+
+        window.state.cart = [];
+        window.state.currentBillId = null;
+        currentBillInfo.textContent = '';
+        
+        let modalContent = `<div class="text-center"><i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i><p class="text-2xl font-bold">Transaction Closed</p><p class="text-gray-300">Paid Ksh ${sale.total.toFixed(2)} via ${paymentMethod}</p>${!navigator.onLine ? '<p class="text-yellow-400 text-sm mt-2">Sale saved locally. Will sync when online.</p>' : ''}</div>`;
+        showModal('Sale Complete!', modalContent, () => true, false);
+        
+        renderAllUI();
+    }
+    
+    function promptMpesaPayment(db) {
+        const total = parseFloat(cartTotalSpan.textContent.replace('Ksh ', ''));
+        let modalContent = `<p class="text-center text-gray-400">Total Amount</p><p class="text-3xl font-bold text-center text-green-400 mb-4">Ksh ${total.toFixed(2)}</p><p class="text-center font-semibold">Customer to pay to Till No: <br><strong class="text-xl">${window.state.settings.mpesaTill || 'Not Set'}</strong></p><hr class="my-4 border-gray-600"><div><label for="mpesa-code" class="block text-sm font-medium text-gray-300">Enter M-PESA Transaction Code</label><input type="text" id="mpesa-code" class="mt-1 block w-full border p-2 uppercase bg-gray-700 border-gray-600 rounded-md" placeholder="e.g., RGA123ABC4" required><p id="mpesa-error" class="text-red-500 text-sm mt-1 hidden">Code cannot be empty.</p></div>`;
+        showModal('M-PESA Payment', modalContent, () => {
+            const codeInput = document.getElementById('mpesa-code');
+            const errorP = document.getElementById('mpesa-error');
+            const mpesaCode = codeInput.value.trim();
+            if (mpesaCode) {
+                handleProcessSale(db, 'M-PESA', mpesaCode.toUpperCase());
+                return true;
+            } else {
+                errorP.classList.remove('hidden');
+                codeInput.focus();
+                return false;
+            }
+        });
+    }
+    
+    function promptCardPayment(db) {
+        const total = parseFloat(cartTotalSpan.textContent.replace('Ksh ', ''));
+        let modalContent = `<p class="text-center text-gray-400">Total Amount</p><p class="text-3xl font-bold text-center text-blue-400 mb-4">Ksh ${total.toFixed(2)}</p><p class="text-center font-semibold">Process payment on the physical card terminal.</p><hr class="my-4 border-gray-600"><div><label for="card-code" class="block text-sm font-medium text-gray-300">Enter Card Transaction Code / Ref No.</label><input type="text" id="card-code" class="mt-1 block w-full border p-2 uppercase bg-gray-700 border-gray-600 rounded-md" placeholder="e.g., 123456" required><p id="card-error" class="text-red-500 text-sm mt-1 hidden">Code cannot be empty.</p></div>`;
+        showModal('Card Payment', modalContent, () => {
+            const codeInput = document.getElementById('card-code');
+            const errorP = document.getElementById('card-error');
+            const cardCode = codeInput.value.trim();
+            if (cardCode) {
+                handleProcessSale(db, 'Card', cardCode.toUpperCase());
+                return true;
+            } else {
+                errorP.classList.remove('hidden');
+                codeInput.focus();
+                return false;
+            }
+        });
+    }
+    
+    function handlePrintBill() {
+        if (!window.state.currentBillId) {
+            showModal("No Bill Selected", "Please select a bill to print.", () => true, false);
+            return;
+        }
+        const bill = window.state.openBills.find(b => b.id === window.state.currentBillId);
+        if (!bill) return;
+        const receiptHtml = generateReceiptHtml(bill, false);
+        printPreviewArea.innerHTML = receiptHtml;
+        printPreviewModal.classList.remove('hidden');
+    }
+    
+    async function handleAddProduct(e, db) {
+        e.preventDefault();
+        const form = e.target;
+        const name = form.querySelector('#product-name').value;
+        const price = parseFloat(form.querySelector('#product-price').value);
+        const stock = parseInt(form.querySelector('#product-stock').value);
+        const category = form.querySelector('#product-category').value;
+        if (name && !isNaN(price) && !isNaN(stock)) {
+            await addDoc(collection(db, "products"), { 
+                name, 
+                price, 
+                stock, 
+                category, 
+                isFavorite: false,
+                businessId: window.state.currentUser.businessId 
+            });
+            form.reset();
+        }
+    }
+    
+    async function handleAddCategory(e, db) {
+        e.preventDefault();
+        const nameInput = e.target.querySelector('#category-name');
+        const name = nameInput.value.trim();
+        const exists = window.state.categories.some(c => c.name.toLowerCase() === name.toLowerCase());
+        if (name && !exists) {
+            await addDoc(collection(db, "categories"), { 
+                name,
+                businessId: window.state.currentUser.businessId
+            });
+            nameInput.value = '';
+        } else {
+            showModal('Error', 'Category name cannot be empty or already exist.', () => true, false);
+        }
+    }
+
+    function promptEditProduct(db, product) {
+        if (!product) return;
+        let categoryOptions = window.state.categories.map(c => `<option value="${c.name}" ${c.name === product.category ? 'selected' : ''}>${c.name}</option>`).join('');
+        const content = `<input type="hidden" id="edit-product-id" value="${product.id}">
+            <div><label for="edit-product-name">Product Name</label><input type="text" id="edit-product-name" value="${product.name}" class="mt-1 block w-full p-2 bg-gray-700 rounded-md"></div>
+            <div class="mt-2"><label for="edit-product-price">Price (Ksh)</label><input type="number" id="edit-product-price" value="${product.price}" class="mt-1 block w-full p-2 bg-gray-700 rounded-md"></div>
+            <div class="mt-2"><label for="edit-product-category">Category</label><select id="edit-product-category" class="mt-1 block w-full p-2 bg-gray-700 rounded-md">${categoryOptions}</select></div>
+            <div class="mt-2"><label for="edit-product-stock">Stock</label><input type="number" id="edit-product-stock" value="${product.stock}" class="mt-1 block w-full p-2 bg-gray-700 rounded-md"></div>`;
+        
+        showModal('Edit Product', content, async () => {
+            const id = document.getElementById('edit-product-id').value;
+            const name = document.getElementById('edit-product-name').value;
+            const price = parseFloat(document.getElementById('edit-product-price').value);
+            const category = document.getElementById('edit-product-category').value;
+            const stock = parseInt(document.getElementById('edit-product-stock').value);
+            
+            await updateDoc(doc(db, "products", id), { name, price, category, stock });
+            return true;
+        });
+    }
+    
+    function promptEditCategory(db, category) {
+        const content = `<div><label for="edit-category-name">New Name for "${category.name}"</label><input type="text" id="edit-category-name" value="${category.name}" class="mt-1 block w-full p-2 bg-gray-700 rounded-md"></div>`;
+        showModal('Edit Category', content, async () => {
+            const newName = document.getElementById('edit-category-name').value.trim();
+            const exists = window.state.categories.some(c => c.name.toLowerCase() === newName.toLowerCase() && c.id !== category.id);
+            if (newName && !exists) {
+                await updateDoc(doc(db, "categories", category.id), { name: newName });
+                return true;
+            }
+            return false;
+        });
+    }
+
+    function handleDeleteCategory(db, category) {
+        const productsInCategory = window.state.products.filter(p => p.category === category.name).length;
+        if (productsInCategory > 0) {
+            showModal('Cannot Delete', `You cannot delete "${category.name}" because ${productsInCategory} product(s) are assigned to it.`, () => true, false);
+            return;
+        }
+        showModal('Confirm Deletion', `Are you sure you want to delete the "${category.name}" category?`, async () => {
+            await deleteDoc(doc(db, "categories", category.id));
+            return true;
+        });
+    }
+
+    function handleAddUser(db) {
+        if (window.state.currentUser.role !== 'admin') {
+            showModal('Permission Denied', 'Only admins can add new staff.', () => true, false);
+            return;
+        }
+        const content = `<div><label>New Waiter Name</label><input type="text" id="new-user-name-modal" class="mt-1 w-full p-2 bg-gray-700 rounded-md"></div>
+            <div class="mt-2"><label>Password / PIN</label><input type="password" id="temp-password" class="mt-1 w-full p-2 bg-gray-700 rounded-md"></div>
+            <p id="addUserError" class="text-red-500 text-sm mt-1 hidden"></p>`;
+        
+        showModal('Add New Waiter', content, async () => {
+            const name = document.getElementById('new-user-name-modal').value.trim();
+            const password = document.getElementById('temp-password').value.trim();
+            const errorP = document.getElementById('addUserError');
+            
+            if (!name || !password) {
+                errorP.textContent = 'Both fields are required.';
+                errorP.classList.remove('hidden');
+                return false;
+            }
+            
+            await addDoc(collection(db, "users"), {
+                name, 
+                password,
+                role: 'waiter',
+                isDeleted: false,
+                createdAt: new Date().toISOString(),
+                businessId: window.state.currentUser.businessId
+            });
+            return true;
+        });
+    }
+
+    function handleSoftDeleteUser(db, userId, userName) {
+        if (window.state.currentUser.role !== 'admin') return;
+        const user = window.state.users.find(u => u.id === userId);
+        const title = user?.deactivationRequested ? 'Confirm Deactivation' : 'Deactivate Waiter';
+        const message = user?.deactivationRequested
+            ? `${userName} has requested to be deactivated. Confirm this action?`
+            : `Are you sure you want to deactivate ${userName}? They will no longer be able to log in.`;
+
+        showModal(title, message, async () => {
+            await updateDoc(doc(db, "users", userId), {
+                isDeleted: true,
+                deactivationRequested: deleteField()
+            });
+            return true;
+        });
+    }
+    
+    function handlePermanentDeleteUser(db, userId, userName) {
+        if (window.state.currentUser.role !== 'admin') return;
+        showModal('Permanently Delete Waiter', `This will permanently delete ${userName} and cannot be undone. Are you sure?`, async () => {
+            await deleteDoc(doc(db, "users", userId));
+            return true;
+        });
+    }
+
+    function handleRestoreUser(db, userId) {
+        if (window.state.currentUser.role !== 'admin') return;
+        updateDoc(doc(db, "users", userId), { isDeleted: false });
+    }
+
+    function promptResetPassword(db, userId, userName) {
+        if (window.state.currentUser.role !== 'admin') return;
+        const content = `<div><label>New Temporary Password for ${userName}</label><input type="text" id="new-temp-password" class="mt-1 w-full p-2 bg-gray-700 rounded-md"></div><p id="resetPwError" class="text-red-400 hidden"></p>`;
+        showModal('Reset Waiter Password', content, async () => {
+            const newPassword = document.getElementById('new-temp-password').value.trim();
+            const errorP = document.getElementById('resetPwError');
+            if (!newPassword || newPassword.length < 4) {
+                errorP.textContent = 'Password must be at least 4 characters.';
+                errorP.classList.remove('hidden');
+                return false;
+            }
+            await updateDoc(doc(db, "users", userId), { password: newPassword });
+            showModal('Success', `Password for ${userName} has been reset.`, () => true, false);
+            return true;
+        });
+    }
+
+    async function handleAddCustomer(db) {
+        const content = `
+            <div><label>Customer Name</label><input type="text" id="new-customer-name" class="mt-1 w-full p-2 bg-gray-700 rounded-md"></div>
+            <div class="mt-2"><label>Phone Number (Optional)</label><input type="tel" id="new-customer-phone" class="mt-1 w-full p-2 bg-gray-700 rounded-md"></div>
+        `;
+        showModal('Add New Customer', content, async () => {
+            const name = document.getElementById('new-customer-name').value.trim();
+            const phone = document.getElementById('new-customer-phone').value.trim();
+            if (name) {
+                await addDoc(collection(db, "customers"), {
+                    name,
+                    phone,
+                    businessId: window.state.currentUser.businessId,
+                    createdAt: serverTimestamp()
+                });
+                return true;
+            }
+            return false;
+        });
+    }
+
+    function promptEditCustomer(db, customer) {
+        const content = `
+            <div><label>Customer Name</label><input type="text" id="edit-customer-name" value="${customer.name}" class="mt-1 w-full p-2 bg-gray-700 rounded-md"></div>
+            <div class="mt-2"><label>Phone Number</label><input type="tel" id="edit-customer-phone" value="${customer.phone || ''}" class="mt-1 w-full p-2 bg-gray-700 rounded-md"></div>
+        `;
+        showModal('Edit Customer', content, async () => {
+            const name = document.getElementById('edit-customer-name').value.trim();
+            const phone = document.getElementById('edit-customer-phone').value.trim();
+            if (name) {
+                await updateDoc(doc(db, "customers", customer.id), { name, phone });
+                return true;
+            }
+            return false;
+        });
+    }
+
+    async function handleAddDiscount(e, db) {
+        e.preventDefault();
+        const form = e.target;
+        const name = form.querySelector('#discount-name').value.trim();
+        const percentage = parseInt(form.querySelector('#discount-percentage').value);
+        if (name && percentage > 0 && percentage <= 100) {
+            await addDoc(collection(db, "discounts"), {
+                name,
+                percentage,
+                businessId: window.state.currentUser.businessId
+            });
+            form.reset();
+        }
+    }
+
+    function handleApplyDiscount() {
+        if (window.state.discounts.length === 0) {
+            showModal('No Discounts', 'Please add a discount in the settings first.', () => true, false);
+            return;
+        }
+        const discountOptions = window.state.discounts.map(d => 
+            `<button data-id="${d.id}" class="w-full text-left p-2 bg-gray-600 hover:bg-gray-500 rounded-md">${d.name} (${d.percentage}%)</button>`
+        ).join('');
+        const content = `<div class="space-y-2">${discountOptions}</div>`;
+        showModal('Select Discount', content, () => true, false);
+
+        document.querySelectorAll('#modal-body button').forEach(button => {
+            button.addEventListener('click', () => {
+                const discount = window.state.discounts.find(d => d.id === button.dataset.id);
+                window.state.cart.discount = discount;
+                renderCart();
+                hideModal();
+            });
+        });
+    }
+    
+    async function handleSaveSettings(db) {
+        const businessName = document.getElementById('business-name').value.trim();
+        const mpesaTill = document.getElementById('mpesa-till').value.trim();
+        
+        await updateDoc(doc(db, "businesses", window.state.currentUser.businessId), { name: businessName, mpesaTill });
+        showModal('Success', 'Settings saved!', () => true, false);
+    }
+
+    function promptChangePassword(auth) {
+        if (window.state.currentUser.role === 'admin') {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            showModal('Change Admin Password', 'A password reset link will be sent to your registered email. Proceed?', () => {
+                sendPasswordResetEmail(auth, user.email)
+                    .then(() => showModal('Check Your Email', `A password reset link has been sent to ${user.email}.`, () => true, false))
+                    .catch(err => showModal('Error', 'Could not send reset email.', () => true, false));
+                return true;
+            });
+        } else {
+            const content = `<div><label>Current Password</label><input type="password" id="current-pw" class="w-full p-2 bg-gray-700 rounded-md"></div><div class="mt-2"><label>New Password</label><input type="password" id="new-pw" class="w-full p-2 bg-gray-700 rounded-md"></div><p id="pw-error" class="text-red-400 hidden"></p>`;
+            showModal('Change Waiter Password', content, async () => {
+                const currentPw = document.getElementById('current-pw').value;
+                const newPw = document.getElementById('new-pw').value;
+                const errorP = document.getElementById('pw-error');
+
+                if(window.state.currentUser.password !== currentPw) {
+                    errorP.textContent = 'Current password is incorrect.';
+                    errorP.classList.remove('hidden');
+                    return false;
+                }
+                if(newPw.length < 4) {
+                    errorP.textContent = 'New password must be at least 4 characters.';
+                    errorP.classList.remove('hidden');
+                    return false;
+                }
+                
+                await updateDoc(doc(db, "users", window.state.currentUser.id), { password: newPw });
+                showModal('Success', 'Password updated successfully.', () => true, false);
+                return true;
+            });
+        }
+    }
+    
+    function handleRequestDeactivation(db) {
+        showModal(
+            'Confirm Deactivation Request',
+            'Are you sure you want to request deactivation? An admin will need to approve this action.',
+            async () => {
+                const userId = window.state.currentUser.id;
+                await updateDoc(doc(db, "users", userId), { deactivationRequested: true });
+                showModal('Request Sent', 'Your deactivation request has been sent to the admin for review.', () => true, false);
+                return true;
+            }
+        );
+    }
+
+    function promptClearTransactions(db) {
+         const content = `<p class="mb-4 text-gray-300">This action will permanently delete all sales and shifts for your business. It cannot be undone.</p><p class="mb-2 font-semibold text-yellow-400">To confirm, please type "DELETE" in the box below.</p><input type="text" id="delete-confirm-input" class="mt-1 block w-full border p-2 uppercase bg-gray-700 border-gray-600 rounded-md" autocomplete="off">`;
+         showModal('Confirm Data Deletion', content, async () => {
+             const confirmInput = document.getElementById('delete-confirm-input');
+             if (confirmInput.value === 'DELETE') {
+                 const businessId = window.state.currentUser.businessId;
+                 const salesQuery = query(collection(db, "sales"), where("businessId", "==", businessId));
+                 const shiftsQuery = query(collection(db, "shifts"), where("businessId", "==", businessId));
+                 
+
+                 const salesSnapshot = await getDocs(salesQuery);
+                 const shiftsSnapshot = await getDocs(shiftsQuery);
+
+                 const batch = writeBatch(db);
+                 salesSnapshot.forEach(doc => batch.delete(doc.ref));
+                 shiftsSnapshot.forEach(doc => batch.delete(doc.ref));
+                 await batch.commit();
+
+                 showModal('Success', 'All transactional data for your business has been cleared.', () => true, false);
+                 return true;
+             }
+             return false;
+         });
+    }
+    
+    function setupLoginTabs() {
+        const tabs = [adminLoginTab, signupTab, waiterLoginTab];
+        const sections = [adminLoginFormSection, signupFormSection, waiterLoginFormSection];
+
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                sections.forEach(s => s.classList.remove('active'));
+                tab.classList.add('active');
+                sections[index].classList.add('active');
+            });
+        });
+    }
+    
+    // --- REPORTING LOGIC ---
+    function showReportFeedback(message, type = 'info') {
+        reportFeedbackDiv.textContent = message;
+        reportFeedbackDiv.className = 'text-center p-2 rounded-md my-4';
+        if (type === 'success') {
+            reportFeedbackDiv.classList.add('bg-green-200', 'text-green-800');
+        } else if (type === 'error') {
+            reportFeedbackDiv.classList.add('bg-red-200', 'text-red-800');
+        } else if (type === 'loading') {
+            reportFeedbackDiv.classList.add('bg-blue-200', 'text-blue-800');
+        }
+        reportFeedbackDiv.classList.remove('hidden');
+    }
+
+    function handleGenerateReport(range = null) {
+        const startDateInput = document.getElementById('report-start-date');
+        const endDateInput = document.getElementById('report-end-date');
+        let startDate, endDate;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (range === 'daily') {
+            startDate = today;
+            endDate = new Date();
+            endDate.setHours(23, 59, 59, 999);
+        } else if (range === '90days') {
+            endDate = new Date();
+            endDate.setHours(23, 59, 59, 999);
+            startDate = new Date();
+            startDate.setDate(today.getDate() - 90);
+            startDate.setHours(0, 0, 0, 0);
+        } else {
+            if (!startDateInput.value || !endDateInput.value) {
+                showReportFeedback('Please select both a start and end date for a custom report.', 'error');
+                return;
+            }
+            startDate = new Date(startDateInput.value);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(endDateInput.value);
+            endDate.setHours(23, 59, 59, 999);
+        }
+
+        if (startDate > endDate) {
+            showReportFeedback('Start date cannot be after the end date.', 'error');
+            return;
+
+        }
+
+        showReportFeedback('Generating report...', 'loading');
+        document.querySelectorAll('.report-btn').forEach(btn => btn.disabled = true);
+        downloadOptions.classList.add('hidden');
+
+        setTimeout(() => {
+            try {
+                const salesInRange = window.state.sales.filter(sale => {
+                    const saleDate = new Date(sale.date.seconds * 1000);
+                    return saleDate >= startDate && saleDate <= endDate;
+                });
+                 const shiftsInRange = window.state.shifts.filter(shift => {
+                    const shiftStart = new Date(shift.start);
+                    return shiftStart >= startDate && (!shift.end || new Date(shift.end) <= endDate);
+                });
+
+                if (salesInRange.length === 0) {
+                    showReportFeedback('No sales data found for the selected period.', 'info');
+                    reportOutputDiv.innerHTML = '<p>No results.</p>';
+                    window.state.generatedReport = null;
+                    document.querySelectorAll('.report-btn').forEach(btn => btn.disabled = false);
+                    aiInsightText.textContent = "No data to analyze. Try expanding your date range.";
+                    return;
+                }
+
+                const totalRevenue = salesInRange.reduce((sum, sale) => sum + sale.total, 0);
+                const totalSales = salesInRange.length;
+                
+                const salesByWaiter = salesInRange.reduce((acc, sale) => {
+                    acc[sale.waiterName] = (acc[sale.waiterName] || 0) + sale.total;
+                    return acc;
+                }, {});
+                const bestSellingWaiter = Object.entries(salesByWaiter).sort(([,a],[,b]) => b-a)[0] || ['N/A', 0];
+
+                const waiterHours = shiftsInRange.reduce((acc, shift) => {
+                    const start = new Date(shift.start);
+                    const end = shift.end ? new Date(shift.end) : new Date();
+                    const hours = (end - start) / (1000 * 60 * 60);
+                    acc[shift.waiterName] = (acc[shift.waiterName] || 0) + hours;
+                    return acc;
+                }, {});
+
+                const productSales = salesInRange.flatMap(sale => sale.items).reduce((acc, item) => {
+                    if (!acc[item.name]) {
+                        acc[item.name] = { quantity: 0, revenue: 0 };
+                    }
+                    acc[item.name].quantity += item.quantity;
+                    acc[item.name].revenue += item.quantity * item.price;
+                    return acc;
+                }, {});
+                const sortedProducts = Object.entries(productSales).sort(([,a], [,b]) => b.revenue - a.revenue);
+
+                window.state.generatedReport = {
+                    startDate: startDate.toLocaleDateString(),
+                    endDate: endDate.toLocaleDateString(),
+                    totalRevenue,
+                    totalSales,
+                    bestSellingWaiter: { name: bestSellingWaiter[0], total: bestSellingWaiter[1] },
+                    waiterHours,
+                    sortedProducts,
+                    salesData: salesInRange,
+                };
+
+                renderReportOutput(window.state.generatedReport);
+                generateAiInsight(window.state.generatedReport);
+
+                showReportFeedback(`Report generated successfully for ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`, 'success');
+                document.querySelectorAll('.report-btn').forEach(btn => btn.disabled = false);
+                downloadOptions.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error generating report:", error);
+                showReportFeedback('An error occurred while generating the report.', 'error');
+                document.querySelectorAll('.report-btn').forEach(btn => btn.disabled = false);
+            }
+        }, 1000);
+    }
+    
+    function renderReportOutput(reportData, forPrinting = false) {
+        const container = forPrinting ? printArea : reportOutputDiv;
+        if (!reportData) {
+            container.innerHTML = '<p>No report data to display.</p>';
+            return;
+        }
+        
+        const waiterHoursHtml = Object.entries(reportData.waiterHours)
+            .map(([name, hours]) => `<li><strong>${name}:</strong> ${hours.toFixed(1)} hours</li>`).join('');
+
+        const productSalesHtml = reportData.sortedProducts
+            .map(([name, data]) => `<tr><td class="py-2 px-2 border-b border-gray-700">${name}</td><td class="py-2 px-2 border-b border-gray-700 text-center">${data.quantity}</td><td class="py-2 px-2 border-b border-gray-700 text-right">Ksh ${data.revenue.toFixed(2)}</td></tr>`).join('');
+
+        const printStyles = forPrinting ? `<style> body { font-family: Arial, sans-serif; color: #000; } .print-header { text-align: center; margin-bottom: 20px; } .summary-card { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; } table { width: 100%; border-collapse: collapse; margin-top: 15px; } th, td { border: 1px solid #ddd; padding: 8px; text-align: left; } th { background-color: #f2f2f2; } h1, h2, h3, h4 { margin: 5px 0; } </style>` : '';
+        const headerContent = `<div class="${forPrinting ? 'print-header' : ''}"><h2 class="text-2xl font-bold">${forPrinting ? window.state.settings.name : 'Report Summary'}</h2><p class="text-sm text-gray-400">For period: ${reportData.startDate} to ${reportData.endDate}</p></div>`;
+
+        container.innerHTML = `
+            ${printStyles}
+            ${headerContent}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-6">
+                <div class="stat-card"><h4 class="font-semibold text-gray-400">Total Revenue</h4><p class="text-3xl font-bold text-green-400 mt-2">Ksh ${reportData.totalRevenue.toFixed(2)}</p></div>
+                <div class="stat-card"><h4 class="font-semibold text-gray-400">Total Transactions</h4><p class="text-3xl font-bold text-blue-400 mt-2">${reportData.totalSales}</p></div>
+                <div class="stat-card"><h4 class="font-semibold text-gray-400">Top Performer</h4><p class="text-2xl font-bold text-yellow-400 mt-2">${reportData.bestSellingWaiter.name}</p><span class="text-sm text-gray-400">Ksh ${reportData.bestSellingWaiter.total.toFixed(2)} in sales</span></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="stat-card"><h4 class="font-semibold text-gray-300 mb-2">Staff Hours</h4><ul class="list-disc list-inside space-y-1">${waiterHoursHtml || '<li>No shift data</li>'}</ul></div>
+                <div class="stat-card"><h4 class="font-semibold text-gray-300 mb-2">Top Selling Products</h4><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr><th class="text-left py-2 px-2">Product</th><th class="text-center py-2 px-2">Qty Sold</th><th class="text-right py-2 px-2">Revenue</th></tr></thead><tbody>${productSalesHtml}</tbody></table></div></div>
+            </div>`;
+    }
+    
+    function handleDownloadReport(type) {
+        if (!window.state.generatedReport) {
+            showReportFeedback('Please generate a report first.', 'error');
+            return;
+        }
+        
+        const btn = type === 'summary' ? downloadSummaryBtn : downloadFullBtn;
+        btn.disabled = true;
+        showReportFeedback(`Preparing ${type} download...`, 'loading');
+
+        setTimeout(() => {
+            try {
+                const report = window.state.generatedReport;
+                let csvContent = "data:text/csv;charset=utf-8,";
+                
+                if (type === 'summary') {
+                    csvContent += `Sales Summary for ${window.state.settings.name}\r\n`;
+                    csvContent += `Period,"${report.startDate} to ${report.endDate}"\r\n\r\n`;
+                    csvContent += `Metric,Value\r\n`;
+                    csvContent += `Total Revenue,${report.totalRevenue.toFixed(2)}\r\n`;
+                    csvContent += `Total Transactions,${report.totalSales}\r\n`;
+                    csvContent += `Best Selling Waiter,"${report.bestSellingWaiter.name} (Ksh ${report.bestSellingWaiter.total.toFixed(2)})"\r\n\r\n`;
+                    csvContent += `Waiter,Hours Worked\r\n`;
+                    Object.entries(report.waiterHours).forEach(([name, hours]) => {
+                        csvContent += `"${name}",${hours.toFixed(2)}\r\n`;
+                    });
+                } else {
+                    csvContent += `Full Sales Report for ${window.state.settings.name}\r\n`;
+                    csvContent += `Period,"${report.startDate} to ${report.endDate}"\r\n\r\n`;
+                    csvContent += "Date,Time,Waiter,Total,Payment Method,Items\r\n";
+                    report.salesData.forEach(sale => {
+                        const saleDate = new Date(sale.date.seconds * 1000);
+                        const date = saleDate.toLocaleDateString();
+                        const time = saleDate.toLocaleTimeString();
+                        const items = sale.items.map(i => `${i.quantity}x ${i.name.replace(/"/g, '""')}`).join('; ');
+                        csvContent += `"${date}","${time}","${sale.waiterName}",${sale.total},"${sale.paymentMethod}","${items}"\r\n`;
+                    });
+                }
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `BarSoko_${type}_Report_${report.startDate}_to_${report.endDate}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showReportFeedback('Download successful!', 'success');
+            } catch (error) {
+                console.error("Error downloading report:", error);
+                showReportFeedback('Failed to download report.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }, 500);
+    }
+    
+    function handlePrintReport() {
+        if (!window.state.generatedReport) {
+            showReportFeedback('Please generate a report first.', 'error');
+            return;
+        }
+        renderReportOutput(window.state.generatedReport, true);
+        window.print();
+    }
+
+    function generateAiInsight(report) {
+        if (!report || report.salesData.length === 0) return;
+
+        const insights = [];
+        const topProduct = report.sortedProducts[0];
+        const topWaiter = report.bestSellingWaiter;
+
+        // Insight 1: Top Product
+        if (topProduct) {
+            insights.push(`Your top product is **${topProduct[0]}**, bringing in **Ksh ${topProduct[1].revenue.toFixed(2)}**. Consider promoting it more.`);
+        }
+
+        // Insight 2: Top Waiter
+        if (topWaiter && topWaiter.name !== 'N/A') {
+            insights.push(`**${topWaiter.name}** is your star performer with **Ksh ${topWaiter.total.toFixed(2)}** in sales. Great job!`);
+        }
+
+        // Insight 3: Revenue Milestone
+        if (report.totalRevenue > 100000) {
+            insights.push(`You've surpassed **Ksh 100,000** in revenue for this period. Excellent work!`);
+        }
+
+        // Insight 4: Busiest Day
+        const salesByDay = report.salesData.reduce((acc, sale) => {
+            const day = new Date(sale.date.seconds * 1000).toLocaleDateString('en-us', { weekday: 'long' });
+            acc[day] = (acc[day] || 0) + sale.total;
+            return acc;
+        }, {});
+        const busiestDay = Object.entries(salesByDay).sort(([, a], [, b]) => b - a)[0];
+        if (busiestDay) {
+            insights.push(`Your busiest day is **${busiestDay[0]}**, with an average of **Ksh ${busiestDay[1].toFixed(2)}** in sales. Staff accordingly!`);
+        }
+
+        // Insight 5: Peak Hours
+        const salesByHour = report.salesData.reduce((acc, sale) => {
+            const hour = new Date(sale.date.seconds * 1000).getHours();
+            acc[hour] = (acc[hour] || 0) + 1; // Count transactions
+            return acc;
+        }, {});
+        const peakHour = Object.entries(salesByHour).sort(([, a], [, b]) => b - a)[0];
+        if (peakHour) {
+            const hour = parseInt(peakHour[0]);
+            const time = hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+            insights.push(`Your peak hour for sales is around **${time}**. Consider a happy hour just before to draw in more customers.`);
+        }
+
+        // Insight 6: Underperforming Product
+        if (report.sortedProducts.length > 5) {
+            const bottomProduct = report.sortedProducts[report.sortedProducts.length - 1];
+            insights.push(`**${bottomProduct[0]}** seems to be a slow seller. Maybe try a "buy one, get one" promotion to boost its sales?`);
+        }
+        
+        aiInsightText.innerHTML = insights.length > 0 ? insights[Math.floor(Math.random() * insights.length)] : "Keep selling to unlock more insights!";
+    }
+
+    // --- SUBSCRIPTION LOGIC ---
+    function checkSubscriptionStatus() {
+        const status = window.state.settings.subscriptionStatus;
+        const endDate = window.state.settings.subscriptionEndDate ? window.state.settings.subscriptionEndDate.toDate() : null;
+        
+        if (status === 'expired' || (endDate && endDate < new Date())) {
+            window.state.isSubscriptionExpired = true;
+            if (status !== 'expired') {
+                // Update status in Firestore if it's expired but not yet marked
+                updateDoc(doc(db, "businesses", window.state.currentUser.businessId), { subscriptionStatus: 'expired' });
+            }
+        } else {
+            window.state.isSubscriptionExpired = false;
+        }
+        toggleRestrictedMode(window.state.isSubscriptionExpired);
+    }
+
+    function toggleRestrictedMode(isRestricted) {
+        const restrictedElements = [
+            tabContents.reports,
+            tabContents.products,
+            tabContents.waiters,
+            tabContents['all-sales'],
+            tabContents.categories,
+            tabContents.customers,
+            document.getElementById('business-settings-section'),
+            document.getElementById('data-management-section')
+        ];
+
+        if (isRestricted) {
+            appDiv.classList.add('restricted');
+            restrictedElements.forEach(el => {
+                if (el) {
+                    el.style.position = 'relative';
+                    if (!el.querySelector('.restricted-overlay')) {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'restricted-overlay';
+                        overlay.innerHTML = `<div class="restricted-overlay-content">
+                            <i class="fas fa-lock text-4xl mb-4"></i>
+                            <h3 class="text-xl font-bold">Feature Locked</h3>
+                            <p class="text-gray-300">Please renew your subscription to access this feature.</p>
+                            <a href="#" class="renew-button" onclick="document.querySelector('[data-tab=settings]').click()">Renew Now</a>
+                        </div>`;
+                        el.appendChild(overlay);
+                    }
+                }
+            });
+        } else {
+            appDiv.classList.remove('restricted');
+            restrictedElements.forEach(el => {
+                const overlay = el.querySelector('.restricted-overlay');
+                if (overlay) {
+                    overlay.remove();
+                }
+            });
+        }
+    }
+
+    async function handleSubscriptionPayment(db) {
+        const mpesaNumber = paymentMpesaNumberInput.value;
+        if (!mpesaNumber || mpesaNumber.length < 10) {
+            alert('Please enter a valid M-PESA phone number.');
+            return;
+        }
+        
+        // In a real app, you would integrate with a payment gateway here.
+        // For this demo, we'll simulate a successful payment.
+        showModal('Processing...', 'Simulating payment, please wait.', () => {}, false);
+
+        setTimeout(async () => {
+            const plan = document.querySelector('.plan-selected')?.id === 'yearly-plan-btn' ? 'yearly' : 'monthly';
+            await updateSubscription(db, plan);
+            hideModal();
+            showModal('Payment Successful!', 'Your subscription has been renewed. All features are now unlocked.', () => true, false);
+        }, 2000);
+    }
+
+    async function updateSubscription(db, plan) {
+        const businessRef = doc(db, "businesses", window.state.currentUser.businessId);
+        const newEndDate = new Date();
+        if (plan === 'yearly') {
+            newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+        } else {
+            newEndDate.setMonth(newEndDate.getMonth() + 1);
+        }
+
+        await updateDoc(businessRef, {
+            subscriptionStatus: 'active',
+            subscriptionEndDate: Timestamp.fromDate(newEndDate)
+        });
+    }
+
+
+    // --- APP START ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log("BarSoko POS Multi-Tenant MVP Initializing...");
+        
+        try {
+            await enableMultiTabIndexedDbPersistence(db);
+            firestoreStatusDiv.textContent = 'Offline Mode Ready';
+            firestoreStatusDiv.className += ' bg-yellow-500 text-yellow-900';
+        } catch (err) {
+            if (err.code == 'failed-precondition') {
+                firestoreStatusDiv.textContent = 'Offline sync active in another tab.';
+                firestoreStatusDiv.className += ' bg-yellow-500 text-yellow-900';
+            } else if (err.code == 'unimplemented') {
+                firestoreStatusDiv.textContent = 'Offline mode not supported by browser.';
+                 firestoreStatusDiv.className += ' bg-red-500 text-white';
+            }
+        }
+
+        listenForAuthChanges(auth, db);
+        setupLoginTabs();
+
+        adminLoginForm.addEventListener('submit', (e) => handleAdminLogin(e, auth));
+        signupForm.addEventListener('submit', (e) => handleSignUp(e, auth, db));
+        waiterLoginForm.addEventListener('submit', (e) => handleWaiterLogin(e, db));
+        forgotPasswordLink.addEventListener('click', (e) => handleForgotPassword(e, auth));
+        logoutBtn.addEventListener('click', () => handleLogout(auth));
+
+        document.getElementById('waiter-business-id').addEventListener('blur', (e) => {
+            populateWaiterSelectForBusiness(e.target.value.trim());
+        });
+    });
+</script>
+</body>
+</html>
